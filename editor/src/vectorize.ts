@@ -1,6 +1,5 @@
 // "Vectoriseren op kleur", browser side: fetches the image layer at a fixed ground resolution
 // (independent of the zoom level) and talks to the worker that does the work (see veccore.ts).
-import type { Map as MLMap } from 'maplibre-gl';
 import type { Position } from 'geojson';
 import { fileUrl } from './api';
 import type { Layer } from './types';
@@ -17,12 +16,49 @@ const unMercY = (y: number) => (2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) * 
 export interface Sample {
   id: string; // unique per fetched raster
   layerId: string;
-  res: number; // requested metres per pixel (0 = the file's own)
+  res: number; // requested metres per pixel (aerial only; a plan is always at its own resolution)
+  areaKey: string; // the area it was fetched for ('' = the whole plan)
   raster: Raster;
   bounds: [number, number, number, number]; // w, s, e, n
 }
 
-const MAX_PX = 9_000_000;
+/** Most pixels one search may cover: about 40 bytes each while it runs, so ~1 GB in the worker. */
+export const MAX_PX = 25_000_000;
+
+export const areaKey = (area: Position[] | null) => (area ? area.map((c) => `${c[0].toFixed(7)},${c[1].toFixed(7)}`).join(';') : '');
+
+// The plan, decoded once per version (it's large; re-decoding for every new area is slow).
+let planCache: { url: string; img: HTMLImageElement } | null = null;
+async function loadPlan(url: string): Promise<HTMLImageElement | null> {
+  if (planCache?.url === url) return planCache.img;
+  const img = await loadImage(url);
+  if (img) planCache = { url, img };
+  return img;
+}
+
+/** Makes everything outside the area transparent: it's then not looked at. */
+function clipToArea(rgba: Uint8ClampedArray, w: number, h: number, ring: [number, number][]) {
+  const inside = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const yc = y + 0.5;
+    const xs: number[] = [];
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i], b = ring[j];
+      if ((a[1] > yc) !== (b[1] > yc)) xs.push(a[0] + ((yc - a[1]) * (b[0] - a[0])) / (b[1] - a[1]));
+    }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const xa = Math.max(0, Math.ceil(xs[k] - 0.5)), xb = Math.min(w - 1, Math.floor(xs[k + 1] - 0.5));
+      for (let x = xa; x <= xb; x++) inside[y * w + x] = 1;
+    }
+  }
+  for (let i = 0; i < w * h; i++) if (!inside[i]) rgba[i * 4 + 3] = 0;
+}
+
+const tooBig = (px: number, mpp: number, hasArea: boolean) => {
+  const km2 = (MAX_PX * mpp * mpp) / 1e6;
+  return new Error(`Dit gebied is te groot om in één keer op volle scherpte te bekijken (${Math.round(px / 1e6)} miljoen pixels, max ${MAX_PX / 1e6} miljoen ≈ ${km2 < 1 ? `${Math.round(km2 * 100)} ha` : `${km2.toFixed(1)} km²`}). ${hasArea ? 'Teken een kleiner gebied.' : 'Teken bij stap 1 het gebied waar je in wilt zoeken.'}`);
+};
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((res) => {
@@ -40,36 +76,48 @@ export function sampleCovers(s: Sample, pos: [number, number]): boolean {
 }
 
 /**
- * The pixels of an image layer at `res` metres per pixel.
- * A plan/PDF: the whole image. The aerial photo: the area in view (it's endless), at a fixed tile level.
+ * The pixels of an image layer within `area` (a ring, lon/lat), or the whole plan when there's no area.
+ * A plan: always at the file's own resolution, nothing scaled down. The aerial: at `res` metres per pixel.
+ * Independent of where you are and how far you're zoomed in.
  */
-export async function sampleLayer(map: MLMap, layer: Layer, pid: string, res: number, include: Position[] = []): Promise<Sample> {
+export async function sampleLayer(layer: Layer, pid: string, res: number, area: Position[] | null): Promise<Sample> {
   const id = `${layer.id}:${res}:${Date.now()}`;
+  const key = areaKey(area);
   if (layer.kind === 'image') {
     if (!layer.image?.warped) throw new Error('Deze afbeelding is nog niet gegeorefereerd');
-    const img = await loadImage(fileUrl(pid, `images/${layer.id}/warped.png`, layer.image.warped.version));
+    const img = await loadPlan(fileUrl(pid, `images/${layer.id}/warped.png`, layer.image.warped.version));
     if (!img) throw new Error('Afbeelding laden mislukt');
     const [west, south, east, north] = layer.image.warped.bounds;
-    const x0 = mercX(west), y0 = mercY(north);
-    const mNative = (mercX(east) - x0) / img.naturalWidth;
+    const X0 = mercX(west), Y0 = mercY(north);
+    const m = (mercX(east) - X0) / img.naturalWidth; // mercator metres per pixel of the file
     const cos = Math.cos((((south + north) / 2) * Math.PI) / 180);
-    let scale = res > 0 ? Math.min(1, (mNative * cos) / res) : 1;
-    if (img.naturalWidth * img.naturalHeight * scale * scale > MAX_PX) scale = Math.sqrt(MAX_PX / (img.naturalWidth * img.naturalHeight));
-    const w = Math.max(1, Math.round(img.naturalWidth * scale)), h = Math.max(1, Math.round(img.naturalHeight * scale));
+    // The area's bounding box in file pixels (whole plan without an area).
+    let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+    let ring: [number, number][] | null = null;
+    if (area) {
+      const pts = area.map((c) => [(mercX(c[0]) - X0) / m, (Y0 - mercY(c[1])) / m] as [number, number]);
+      sx = Math.max(0, Math.floor(Math.min(...pts.map((q) => q[0]))));
+      sy = Math.max(0, Math.floor(Math.min(...pts.map((q) => q[1]))));
+      sw = Math.min(img.naturalWidth, Math.ceil(Math.max(...pts.map((q) => q[0])))) - sx;
+      sh = Math.min(img.naturalHeight, Math.ceil(Math.max(...pts.map((q) => q[1])))) - sy;
+      if (sw < 2 || sh < 2) throw new Error('Het gebied ligt buiten deze plattegrond');
+      ring = pts.map((q) => [q[0] - sx, q[1] - sy]);
+    }
+    if (sw * sh > MAX_PX) throw tooBig(sw * sh, m * cos, !!area);
     const cv = document.createElement('canvas');
-    cv.width = w; cv.height = h;
+    cv.width = sw; cv.height = sh;
     const ctx = cv.getContext('2d', { willReadFrequently: true })!;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, w, h);
-    const m = (mercX(east) - x0) / w;
-    return { id, layerId: layer.id, res, bounds: [west, south, east, north], raster: { w, h, rgba: ctx.getImageData(0, 0, w, h).data, x0, y0, m, mpp: m * cos } };
+    ctx.imageSmoothingEnabled = false; // 1:1, the file's own pixels
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+    const rgba = ctx.getImageData(0, 0, sw, sh).data;
+    if (ring) clipToArea(rgba, sw, sh, ring);
+    const x0 = X0 + sx * m, y0 = Y0 - sy * m;
+    return { id, layerId: layer.id, res: 0, areaKey: key, bounds: [unMercX(x0), unMercY(y0 - sh * m), unMercX(x0 + sw * m), unMercY(y0)], raster: { w: sw, h: sh, rgba, x0, y0, m, mpp: m * cos } };
   }
   if (layer.kind !== 'pdok') throw new Error('Kies een beeldlaag (luchtfoto of afbeelding)');
-  // The area in view, grown to include earlier clicks (so a new fetch doesn't drop them).
-  const vb = map.getBounds();
-  const lons = [vb.getWest(), vb.getEast(), ...include.map((c) => c[0])], lats = [vb.getSouth(), vb.getNorth(), ...include.map((c) => c[1])];
-  const b = { getWest: () => Math.min(...lons), getEast: () => Math.max(...lons), getSouth: () => Math.min(...lats), getNorth: () => Math.max(...lats) };
-  const lat = map.getCenter().lat;
+  if (!area) throw new Error('Teken eerst het gebied waarin gezocht moet worden (stap 1)');
+  const lons = area.map((c) => c[0]), lats = area.map((c) => c[1]);
+  const lat = (Math.min(...lats) + Math.max(...lats)) / 2;
   const cos = Math.cos((lat * Math.PI) / 180);
   // Tile level whose pixels are at least as fine as the requested resolution.
   const want = res > 0 ? res : 0.25;
@@ -79,11 +127,12 @@ export async function sampleLayer(map: MLMap, layer: Layer, pid: string, res: nu
   const ty = (la: number) => { const r = (la * Math.PI) / 180; return Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n); };
   const tLon = (x: number) => (x / n) * 360 - 180;
   const tLat = (y: number) => (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
-  const xs = [tx(b.getWest()), tx(b.getEast())], ys = [ty(b.getNorth()), ty(b.getSouth())];
-  const tiles = (xs[1] - xs[0] + 1) * (ys[1] - ys[0] + 1);
-  if (tiles * 256 * 256 > MAX_PX * 1.6) throw new Error('Dit beeld is te groot voor deze resolutie. Zoom wat in, kies een grovere resolutie, of wis klikken die ver weg liggen.');
-  const west = tLon(xs[0]), north = tLat(ys[0]), east = tLon(xs[1] + 1), south = tLat(ys[1] + 1);
+  const xs = [tx(Math.min(...lons)), tx(Math.max(...lons))], ys = [ty(Math.max(...lats)), ty(Math.min(...lats))];
   const w = (xs[1] - xs[0] + 1) * 256, h = (ys[1] - ys[0] + 1) * 256;
+  const west = tLon(xs[0]), north = tLat(ys[0]), east = tLon(xs[1] + 1), south = tLat(ys[1] + 1);
+  const x0 = mercX(west), y0 = mercY(north);
+  const m = (mercX(east) - x0) / w;
+  if (w * h > MAX_PX) throw tooBig(w * h, m * cos, true);
   const cv = document.createElement('canvas');
   cv.width = w; cv.height = h;
   const ctx = cv.getContext('2d', { willReadFrequently: true })!;
@@ -93,9 +142,9 @@ export async function sampleLayer(map: MLMap, layer: Layer, pid: string, res: nu
     for (let y = ys[0]; y <= ys[1]; y++)
       jobs.push(loadImage(url.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y))).then((img) => { if (img) ctx.drawImage(img, (x - xs[0]) * 256, (y - ys[0]) * 256); }));
   await Promise.all(jobs);
-  const x0 = mercX(west), y0 = mercY(north);
-  const m = (mercX(east) - x0) / w;
-  return { id, layerId: layer.id, res, bounds: [west, south, east, north], raster: { w, h, rgba: ctx.getImageData(0, 0, w, h).data, x0, y0, m, mpp: m * cos } };
+  const rgba = ctx.getImageData(0, 0, w, h).data;
+  clipToArea(rgba, w, h, area.map((c) => [(mercX(c[0]) - x0) / m, (y0 - mercY(c[1])) / m]));
+  return { id, layerId: layer.id, res, areaKey: key, bounds: [west, south, east, north], raster: { w, h, rgba, x0, y0, m, mpp: m * cos } };
 }
 
 /** Wraps the worker: one raster loaded at a time, newest request wins. */
@@ -137,12 +186,12 @@ export class Vectorizer {
   dispose() { this.worker.terminate(); }
 }
 
-/** A data URL of the prepared image, to show "what the computer sees". */
-export function previewUrl(s: Sample, rgba: Uint8ClampedArray): string {
+/** A canvas with the prepared image, to show "what the computer sees" (no PNG encoding: large areas stay fast). */
+export function previewCanvas(s: Sample, rgba: Uint8ClampedArray): HTMLCanvasElement {
   const cv = document.createElement('canvas');
   cv.width = s.raster.w; cv.height = s.raster.h;
   cv.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(rgba), s.raster.w, s.raster.h), 0, 0);
-  return cv.toDataURL('image/png');
+  return cv;
 }
 
 export function sampleCorners(s: Sample): [[number, number], [number, number], [number, number], [number, number]] {

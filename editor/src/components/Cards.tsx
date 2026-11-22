@@ -419,16 +419,20 @@ export function FillCard({ layer, gap, setGap }: { layer: Layer | null; gap: num
   );
 }
 
-export type VecClick = 'pick' | 'exclude' | 'fill' | 'add' | 'cut' | 'line';
+export type VecClick = 'area' | 'pick' | 'exclude' | 'fill' | 'add' | 'cut' | 'line';
 export interface VecState {
   sourceId: string | null;
-  res: number; // metres per pixel; 0 = the file's own
+  res: number; // aerial: metres per pixel (a plan is always looked at in full)
+  area: Position[] | null; // where to search (lon/lat ring); null = the whole plan
   picks: Pick[];
   ops: MaskOp[];
   click: VecClick;
   scope: 'connected' | 'all';
   reach: number;
   smooth: number;
+  bright: number; // −100..100
+  contrast: number; // −100..100
+  sat: number; // %
   showPrep: boolean;
   bridge: number;
   speck: number;
@@ -440,7 +444,7 @@ export interface VecState {
   target: VecTarget;
 }
 export const VEC_DEFAULTS: VecState = {
-  sourceId: null, res: 0.5, picks: [], ops: [], click: 'pick', scope: 'connected', reach: 4, smooth: 2, showPrep: false, bridge: 0.5,
+  sourceId: null, res: 0.5, area: null, picks: [], ops: [], click: 'area', scope: 'all', reach: 4, smooth: 0, bright: 0, contrast: 0, sat: 100, showPrep: false, bridge: 0.5,
   speck: 4, holes: 4, output: 'polygon', simplify: 0.4, minLength: 3, name: '', target: { type: 'active' },
 };
 
@@ -453,7 +457,7 @@ function Step({ n, title, children, open: initial = true }: { n: number; title: 
   );
 }
 
-export function VecCard({ state, setState, sources, layers, active, result, busy, mpp, drafting, onFinishDraft, onUndo, onAdd, onClear, onRemovePick, onRefetch, hasSample }: {
+export function VecCard({ state, setState, sources, layers, active, result, busy, mpp, drafting, onFinishDraft, onUndo, onAdd, onClear, onRemovePick }: {
   state: VecState;
   setState: (p: Partial<VecState>) => void;
   sources: Layer[];
@@ -468,8 +472,6 @@ export function VecCard({ state, setState, sources, layers, active, result, busy
   onAdd: () => void;
   onClear: () => void;
   onRemovePick: (i: number) => void;
-  onRefetch: () => void;
-  hasSample: boolean;
 }) {
   const want = state.output === 'line' ? 'lines' : 'polys';
   const fits = (l: Layer) => isVectorKind(l.kind) && layerTakes(l.kind)[want];
@@ -511,31 +513,46 @@ export function VecCard({ state, setState, sources, layers, active, result, busy
             {sources.map((l) => <option key={l.id} value={l.id}>{l.name}{l.visible ? '' : ' (verborgen)'}</option>)}
           </select>
         </div>
+        <div className="col" style={{ gap: 6 }}>
+          <span className="muted" style={{ fontSize: 12 }}>Gebied</span>
+          <div className="seg-group">
+            <button className={`seg ${state.click === 'area' ? 'on' : ''}`} onClick={() => setState({ click: 'area' })} title="Klik punten rond het gebied waarin gezocht moet worden">{state.area ? 'Nieuw gebied tekenen' : 'Gebied tekenen'}</button>
+            {src?.kind === 'image' && <button className={`seg ${!state.area && state.click !== 'area' ? 'on' : ''}`} onClick={() => setState({ area: null, picks: [], ops: [], click: 'pick' })} title="De hele plattegrond (als die niet te groot is)">Hele plattegrond</button>}
+          </div>
+          <span className="faint" style={{ fontSize: 11.5 }}>
+            {state.click === 'area'
+              ? 'Klik punten rond het gebied; klik het eerste punt of ↵ om af te ronden. Alleen binnen dit gebied wordt gezocht, op volle scherpte, hoe ver je ook in- of uitzoomt.'
+              : state.area
+                ? 'Er wordt alleen binnen de witte stippellijn gezocht, op volle scherpte.'
+                : 'De hele plattegrond op volle scherpte. Te groot? Teken dan een gebied.'}
+          </span>
+        </div>
         <div className="col" style={{ gap: 4 }}>
           <span className="muted" style={{ fontSize: 12 }}>Pakken</span>
           <div className="seg-group">
-            <button className={`seg ${state.scope === 'connected' ? 'on' : ''}`} onClick={() => setState({ scope: 'connected' })} title="Alleen wat vastzit aan waar je klikt">Aangeklikt stuk</button>
-            <button className={`seg ${state.scope === 'all' ? 'on' : ''}`} onClick={() => setState({ scope: 'all' })} title="Alles in het beeld met deze kleur">Overal</button>
+            <button className={`seg ${state.scope === 'all' ? 'on' : ''}`} onClick={() => setState({ scope: 'all' })} title="Alles in het gebied met deze kleur">Alles in het gebied</button>
+            <button className={`seg ${state.scope === 'connected' ? 'on' : ''}`} onClick={() => setState({ scope: 'connected' })} title="Alleen wat vastzit aan waar je klikt">Alleen aangeklikt stuk</button>
           </div>
-          <span className="faint" style={{ fontSize: 11.5 }}>{state.scope === 'connected' ? 'Eén veld, vlak of pad: alleen wat vastzit aan je klik.' : 'Alles in het beeld met deze kleur, bijv. al het water.'}</span>
         </div>
-        <div className="col" style={{ gap: 4 }}>
-          <span className="muted" style={{ fontSize: 12 }}>Detail (los van hoe ver je inzoomt)</span>
-          <div className="seg-group">
-            {[[1, 'Grof · 1 m'], [0.5, 'Normaal · 0,5 m'], [0, src?.kind === 'pdok' ? 'Fijn · 0,25 m' : 'Bestand']].map(([v, l]) => (
-              <button key={String(v)} className={`seg ${state.res === v ? 'on' : ''}`} onClick={() => setState({ res: v as number })}>{l}</button>
-            ))}
+        {src?.kind === 'pdok' && (
+          <div className="col" style={{ gap: 4 }}>
+            <span className="muted" style={{ fontSize: 12 }}>Detail luchtfoto</span>
+            <div className="seg-group">
+              {[[1, 'Grof · 1 m'], [0.5, 'Normaal · 0,5 m'], [0, 'Fijn · 0,25 m']].map(([v, l]) => (
+                <button key={String(v)} className={`seg ${state.res === v ? 'on' : ''}`} onClick={() => setState({ res: v as number })}>{l}</button>
+              ))}
+            </div>
           </div>
-          <span className="faint" style={{ fontSize: 11.5 }}>{src?.kind === 'pdok' ? 'Luchtfoto: het gebied dat in beeld is bij je eerste klik wordt opgehaald. Alleen binnen de witte stippellijn wordt gezocht.' : 'Plattegrond: altijd het hele bestand.'} Fijner = nauwkeuriger maar trager.</span>
-        </div>
-        {src?.kind === 'pdok' && hasSample && (
-          <button className="btn sm" onClick={onRefetch} title="Haalt de luchtfoto opnieuw op: wat nu in beeld is, plus alles wat je al aangeklikt hebt">Opnieuw ophalen voor huidig beeld</button>
         )}
       </Step>
 
-      <Step n={2} title="Beeld bewerken">
-        {slider('vec-smooth', 'Gladstrijken', state.smooth ? `${state.smooth} px` : 'uit', 0, 4, 1, state.smooth, (v) => setState({ smooth: v }), 'Haalt korrel en ruis weg, maar houdt randen scherp. Luchtfoto: 2–3. Plattegrond: 0–1 (hoger veegt dunne paadjes weg).')}
-        <Toggle label="Toon wat de computer ziet" desc="Wat bij een aangeklikte kleur hoort in die kleur (roze = pakken), de rest grijs." on={state.showPrep} onFlip={() => setState({ showPrep: !state.showPrep })} />
+      <Step n={2} title="Beeld bewerken (voor de computer)">
+        {slider('vec-bright', 'Helderheid', `${state.bright > 0 ? '+' : ''}${state.bright}`, -100, 100, 5, state.bright, (v) => setState({ bright: v }))}
+        {slider('vec-contrast', 'Contrast', `${state.contrast > 0 ? '+' : ''}${state.contrast}`, -100, 100, 5, state.contrast, (v) => setState({ contrast: v }))}
+        {slider('vec-sat', 'Verzadiging', `${state.sat}%`, 0, 400, 10, state.sat, (v) => setState({ sat: v }), 'Hoger = kleuren feller en verder uit elkaar, bijv. lichtgroen tegen wit of grijs.')}
+        {slider('vec-smooth', 'Gladstrijken', state.smooth ? `${state.smooth} px` : 'uit', 0, 4, 1, state.smooth, (v) => setState({ smooth: v }), 'Haalt korrel en ruis weg, maar houdt randen scherp. Luchtfoto: 2–3. Plattegrond: uit (anders verdwijnen dunne paadjes).')}
+        {(state.bright !== 0 || state.contrast !== 0 || state.sat !== 100) && <button className="link muted" style={{ alignSelf: 'flex-start' }} onClick={() => setState({ bright: 0, contrast: 0, sat: 100 })}>Kleuren terugzetten</button>}
+        <Toggle label="Toon wat de computer ziet" desc="Het bewerkte beeld zoals de computer het gebruikt. Wat bij een aangeklikte kleur hoort, staat erin in die kleur (roze = pakken)." on={state.showPrep} onFlip={() => setState({ showPrep: !state.showPrep })} />
       </Step>
 
       <Step n={3} title="Kleuren kiezen">

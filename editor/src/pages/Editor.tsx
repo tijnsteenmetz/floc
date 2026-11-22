@@ -12,7 +12,7 @@ import type { Facility, Layer, Project } from '../types';
 import { SHAPE_CATEGORIES, isVectorKind, isWalkableLayer, layerTakes, makeLayer, newId } from '../types';
 import { facilityPolygon, facilityTargets, facilityToLonLat, fmtNum, layerLines, lonLatToFacility, normaliseFeatures, projectBounds, rotationHandle, shapeFromRing } from '../geo';
 import { enclosedArea, type Boundary } from '../fill';
-import { Vectorizer, previewUrl, sampleCorners, sampleCovers, sampleLayer, type MaskOp, type PickKind, type RunResult, type Sample } from '../vectorize';
+import { Vectorizer, areaKey, previewCanvas, sampleCorners, sampleCovers, sampleLayer, type MaskOp, type PickKind, type RunResult, type Sample } from '../vectorize';
 import { RoutingGraph, type RouteResult } from '../routing';
 import { DrawController, type DrawTool } from '../map/draw';
 import { facilityData, layerData, removeLayerAndSource, styleLayers, syncSource } from '../map/render';
@@ -67,14 +67,14 @@ export function Editor() {
   const [navAdd, setNavAdd] = useState<string | null>(null);
   const sampleRef = useRef<Sample | null>(null);
   const vectorizerRef = useRef<Vectorizer | null>(null);
-  const [vec, setVec] = useState<VecState>(() => ({ ...VEC_DEFAULTS, ...readPref<Partial<VecState>>('vec', {}), sourceId: null, picks: [], ops: [], click: 'pick' }));
+  const [vec, setVec] = useState<VecState>(() => ({ ...VEC_DEFAULTS, ...readPref<Partial<VecState>>('vec2', {}), sourceId: null, area: null, picks: [], ops: [], click: 'area' }));
   const [vecDraft, setVecDraft] = useState<Position[]>([]);
   const [vecRes, setVecRes] = useState<RunResult | null>(null);
   const [vecBusy, setVecBusy] = useState<string | null>(null);
   const [sampleTick, setSampleTick] = useState(0);
   useEffect(() => {
-    const { sourceId, picks, ops, click, name, target, ...settings } = vec;
-    writePref('vec', settings);
+    const { sourceId, area, picks, ops, click, name, target, ...settings } = vec;
+    writePref('vec2', settings);
   }, [vec]);
   useEffect(() => { writePref('snapPx', snapPx); writePref('holeWalkable', holeWalkable); writePref('cutBelow', cutBelow); writePref('fillGap', fillGap); }, [snapPx, holeWalkable, cutBelow, fillGap]);
   const [place, setPlace] = useState<PlaceState>({ category: 'podium', mode: 'trace' });
@@ -240,18 +240,16 @@ export function Editor() {
   }, [tool, rasterLayers.map((l) => l.id).join()]);
   useEffect(() => () => vectorizerRef.current?.dispose(), []);
 
-  /** Makes sure the image is loaded at the chosen resolution (and, for the aerial, covers `pos`). */
-  const ensureSample = async (pos?: Position, force = false, extra: Position[] = []): Promise<Sample | null> => {
+  /** The image the search runs on: the drawn area (or the whole plan) at full resolution. Independent of the zoom. */
+  const sampleFits = (cur: Sample | null, src: Layer) => !!cur && cur.layerId === src.id && cur.areaKey === areaKey(vec.area) && (src.kind !== 'pdok' || cur.res === vec.res);
+  const ensureSample = async (force = false): Promise<Sample | null> => {
     const p = projectRef.current!;
     const src = p.layers.find((l) => l.id === vec.sourceId);
     if (!src) { setToast({ msg: 'Kies in het paneel rechts een beeldlaag om van te vectoriseren', err: true }); return null; }
-    const cur = sampleRef.current;
-    if (!force && cur && cur.layerId === src.id && cur.res === vec.res && [...(pos ? [pos] : []), ...extra].every((q) => sampleCovers(cur, q as [number, number]))) return cur;
+    if (!force && sampleFits(sampleRef.current, src)) return sampleRef.current;
     setVecBusy('Beeld ophalen…');
     try {
-      // Keep earlier clicks and drawn edits inside the new image.
-      const include: Position[] = [...vec.picks.map((k) => k.pos), ...vec.ops.flatMap((o) => (o.type === 'fill' ? [o.pos] : o.type === 'line' ? o.line : o.ring)), ...(pos ? [pos] : []), ...extra];
-      const smp = await sampleLayer(mapRef.current!, src, p.id, vec.res, include);
+      const smp = await sampleLayer(src, p.id, vec.res, vec.area);
       sampleRef.current = smp;
       setSampleTick((t) => t + 1);
       return smp;
@@ -260,22 +258,23 @@ export function Editor() {
       return null;
     } finally { setVecBusy(null); }
   };
-  // A different source or resolution: fetch again if there's work in progress.
+  // A different source, area or resolution: fetch again.
   useEffect(() => {
     if (tool !== 'wand' || !vec.sourceId) return;
-    const cur = sampleRef.current;
-    if ((vec.picks.length || vec.ops.length || vec.showPrep) && (!cur || cur.layerId !== vec.sourceId || cur.res !== vec.res)) void ensureSample();
-  }, [tool, vec.sourceId, vec.res, vec.showPrep]);
+    const src = projectRef.current?.layers.find((l) => l.id === vec.sourceId);
+    if (!src || sampleFits(sampleRef.current, src)) return;
+    if (vec.area || vec.picks.length || vec.ops.length || vec.showPrep) void ensureSample();
+  }, [tool, vec.sourceId, vec.res, vec.area, vec.showPrep]);
   useEffect(() => {
     const smp = sampleRef.current;
-    if (tool !== 'wand' || !smp || smp.layerId !== vec.sourceId || (!vec.picks.length && !vec.ops.length && !vec.showPrep)) { setVecRes(null); return; }
+    if (tool !== 'wand' || !smp || smp.layerId !== vec.sourceId || smp.areaKey !== areaKey(vec.area) || (!vec.picks.length && !vec.ops.length && !vec.showPrep)) { setVecRes(null); return; }
     let live = true;
     const t = window.setTimeout(async () => {
       vectorizerRef.current ??= new Vectorizer();
       setVecBusy('Rekenen…');
       try {
         const res = await vectorizerRef.current.run(smp, {
-          picks: vec.picks, ops: vec.ops, scope: vec.scope, reach: vec.reach, smooth: vec.smooth,
+          picks: vec.picks, ops: vec.ops, scope: vec.scope, reach: vec.reach, smooth: vec.smooth, bright: vec.bright, contrast: vec.contrast, sat: vec.sat,
           bridge: vec.bridge, speck: vec.speck, holes: vec.holes, output: vec.output, simplify: vec.simplify, minLength: vec.minLength, wantPreview: vec.showPrep,
         });
         if (live && res) setVecRes(res);
@@ -283,7 +282,7 @@ export function Editor() {
       finally { if (live) setVecBusy(null); }
     }, 120);
     return () => { live = false; window.clearTimeout(t); };
-  }, [tool, sampleTick, vec.sourceId, vec.picks, vec.ops, vec.scope, vec.reach, vec.smooth, vec.bridge, vec.speck, vec.holes, vec.output, vec.simplify, vec.minLength, vec.showPrep]);
+  }, [tool, sampleTick, vec.sourceId, vec.picks, vec.ops, vec.scope, vec.reach, vec.smooth, vec.bright, vec.contrast, vec.sat, vec.bridge, vec.speck, vec.holes, vec.output, vec.simplify, vec.minLength, vec.showPrep]);
   // "What the computer sees": the prepared image on the map.
   useEffect(() => {
     const map = mapRef.current;
@@ -293,8 +292,8 @@ export function Editor() {
     if (map.getLayer('vecimg')) map.removeLayer('vecimg');
     if (map.getSource('src-vecimg')) map.removeSource('src-vecimg');
     if (!show) return;
-    map.addSource('src-vecimg', { type: 'image', url: previewUrl(smp!, vecRes!.preview!), coordinates: sampleCorners(smp!) });
-    map.addLayer({ id: 'vecimg', type: 'raster', source: 'src-vecimg', paint: { 'raster-opacity': 0.92, 'raster-fade-duration': 0, 'raster-resampling': 'nearest' } }, map.getLayer('aux-fill') ? 'aux-fill' : undefined);
+    map.addSource('src-vecimg', { type: 'canvas', canvas: previewCanvas(smp!, vecRes!.preview!), coordinates: sampleCorners(smp!), animate: false });
+    map.addLayer({ id: 'vecimg', type: 'raster', source: 'src-vecimg', paint: { 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-resampling': 'nearest' } }, map.getLayer('aux-fill') ? 'aux-fill' : undefined);
   }, [vecRes, vec.showPrep, tool, mapReady]);
 
   // ---------- map ----------
@@ -396,12 +395,8 @@ export function Editor() {
     if (!src) return;
     const feats: Feature[] = [];
     if (tool === 'wand') {
-      // Where the search runs: the fetched part of the aerial.
-      const smp = sampleRef.current;
-      if (smp && smp.layerId === vec.sourceId && project.layers.find((l) => l.id === smp.layerId)?.kind === 'pdok') {
-        const [w, so, e, n] = smp.bounds;
-        feats.push(turf.lineString([[w, n], [e, n], [e, so], [w, so], [w, n]], { dash: true, color: '#FFFFFF', lo: 0.7, lw: 1.5 }));
-      }
+      // Where the search runs: the drawn area.
+      if (vec.area) feats.push(turf.lineString([...vec.area, vec.area[0]], { dash: true, color: '#FFFFFF', lo: 0.9, lw: 2 }));
       for (const f of vecRes?.others.features ?? []) feats.push({ ...f, properties: { dash: true, color: '#FF4FD8', lo: 0.9, lw: 1.5 } });
       for (const f of vecRes?.features ?? []) feats.push({ ...f, properties: { part: 'vec', color: '#FF4FD8', fo: 0.3, lw: 2.2 } });
       for (const op of vec.ops) {
@@ -410,7 +405,7 @@ export function Editor() {
         else feats.push(turf.polygon([[...op.ring, op.ring[0]]], { color: op.type === 'add' ? '#D4F56A' : '#FF6B6B', fo: 0.12, dash: true, lw: 2 }));
       }
       if (vecDraft.length) {
-        const c = vec.click === 'add' ? '#D4F56A' : '#FF6B6B';
+        const c = vec.click === 'area' ? '#FFFFFF' : vec.click === 'add' ? '#D4F56A' : '#FF6B6B';
         if (vecDraft.length >= 3 && vec.click !== 'line') feats.push(turf.polygon([[...vecDraft, vecDraft[0]]], { color: c, fo: 0.15, lw: 0 }));
         if (vecDraft.length >= 2) feats.push(turf.lineString(vecDraft, { color: c, lw: 2, dash: vec.click !== 'line' }));
         vecDraft.forEach((q, i) => feats.push(turf.point(q, { color: c, fill: i === 0 ? c : '#0C0D0E', r: i === 0 ? 5 : 3.5 })));
@@ -428,7 +423,7 @@ export function Editor() {
       }
     }
     src.setData({ type: 'FeatureCollection', features: feats });
-  }, [vecRes, vec.showPrep, vec.ops, vec.picks, vec.click, vecDraft, tool, project?.facilities, selection, mapReady, lib.categories, project?.layers, facShown, sampleTick, vec.sourceId]);
+  }, [vecRes, vec.showPrep, vec.area, vec.ops, vec.picks, vec.click, vecDraft, tool, project?.facilities, selection, mapReady, lib.categories, project?.layers, facShown, sampleTick, vec.sourceId]);
 
   // Route geometry
   useEffect(() => {
@@ -915,7 +910,7 @@ export function Editor() {
   const wandAt = async (e: maplibregl.MapMouseEvent, ll: Position) => {
     const oe = e.originalEvent;
     const mode: VecClick = oe.altKey ? 'exclude' : vec.click;
-    if (mode === 'add' || mode === 'cut' || mode === 'line') {
+    if (mode === 'area' || mode === 'add' || mode === 'cut' || mode === 'line') {
       const map = mapRef.current!;
       const d = vecDraft;
       const near = (q: Position | undefined) => { if (!q) return false; const a = map.project(q as [number, number]); return Math.hypot(a.x - e.point.x, a.y - e.point.y) < 10; };
@@ -924,20 +919,30 @@ export function Editor() {
       setVecDraft([...d, ll]);
       return;
     }
-    const smp = await ensureSample(ll);
+    if (vec.area && !turf.booleanPointInPolygon(ll as [number, number], turf.polygon([[...vec.area, vec.area[0]]]))) {
+      setToast({ msg: 'Klik binnen het gebied (de witte stippellijn), of teken bij stap 1 een nieuw gebied', err: true });
+      return;
+    }
+    const smp = await ensureSample();
     if (!smp) return;
+    if (!sampleCovers(smp, ll as [number, number])) { setToast({ msg: 'Dit punt ligt buiten de beeldlaag', err: true }); return; }
     if (mode === 'fill') { setVec((v) => ({ ...v, ops: [...v.ops, { type: 'fill', pos: ll }] })); return; }
     setVec((v) => ({ ...v, picks: [...v.picks, { kind: mode, pos: ll }] }));
   };
   const finishDraft = () => {
     const d = vecDraft;
     if (vec.click === 'line' ? d.length < 2 : d.length < 3) { setVecDraft([]); return; }
+    if (vec.click === 'area') {
+      // A new area: start fresh inside it, then go on with picking colours.
+      setVec((v) => ({ ...v, area: d, picks: [], ops: [], click: 'pick' }));
+      setVecDraft([]);
+      return;
+    }
     const op: MaskOp = vec.click === 'line' ? { type: 'line', line: d } : { type: vec.click === 'add' ? 'add' : 'cut', ring: d };
     setVec((v) => ({ ...v, ops: [...v.ops, op] }));
     setVecDraft([]);
-    // Drawing in also works before any colour is picked: make sure there's an image that covers it.
-    const cur = sampleRef.current;
-    if (!cur || cur.layerId !== vec.sourceId || d.some((q) => !sampleCovers(cur, q as [number, number]))) void ensureSample(d[0], false, d);
+    // Drawing in also works before any colour is picked: make sure the image is there.
+    void ensureSample();
   };
   const undoVecStep = () => {
     if (vecDraft.length) { setVecDraft((d) => d.slice(0, -1)); return; }
@@ -1175,8 +1180,6 @@ export function Editor() {
             onAdd={addVecResult}
             onClear={() => { setVec((v) => ({ ...v, picks: [], ops: [] })); setVecDraft([]); }}
             onRemovePick={(i) => setVec((v) => ({ ...v, picks: v.picks.filter((_, j) => j !== i) }))}
-            hasSample={!!sampleRef.current && sampleRef.current.layerId === vec.sourceId}
-            onRefetch={() => { void ensureSample(undefined, true); }}
           />
         ) : ['line', 'polygon', 'rect', 'hole'].includes(tool) ? (
           <DrawCard tool={tool as 'line' | 'polygon' | 'rect' | 'hole'} layer={active} snapping={snapping} setSnapping={setSnapping} snapPx={snapPx} setSnapPx={(v) => setSnapPx(clampSnap(v))}
@@ -1193,7 +1196,9 @@ export function Editor() {
           <div className="card hint"><span><span className="kbd">klik</span> binnen een gebied dat omsloten is door paden of vlakken</span><span><span className="kbd">⌘Z</span> ongedaan</span></div>
         )}
         {tool === 'wand' && !panelLayer && (
-          <div className="card hint"><span><span className="kbd">klik</span> kleur pakken</span><span><span className="kbd">⌥ klik</span> uitsluiten</span><span><span className="kbd">⌫</span> laatste stap</span><span><span className="kbd">↵</span> toevoegen</span></div>
+          vec.click === 'area' ? (
+            <div className="card hint"><span><span className="kbd">klik</span> punten rond het zoekgebied</span><span><span className="kbd">klik eerste punt</span> of <span className="kbd">↵</span> afronden</span><span><span className="kbd">⌫</span> punt terug</span></div>
+          ) : <div className="card hint"><span><span className="kbd">klik</span> kleur pakken</span><span><span className="kbd">⌥ klik</span> uitsluiten</span><span><span className="kbd">⌫</span> laatste stap</span><span><span className="kbd">↵</span> toevoegen</span></div>
         )}
         {navAdd && !panelLayer && (
           <div className="card hint"><span><span className="kbd">klik</span> op de kaart: navigatiepunt erbij</span><span><span className="kbd">esc</span> klaar</span></div>

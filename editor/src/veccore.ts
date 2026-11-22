@@ -29,8 +29,9 @@ export type PickKind = 'pick' | 'exclude';
 export interface Pick { kind: PickKind; pos: Position }
 export type MaskOp = { type: 'add' | 'cut'; ring: Position[] } | { type: 'line'; line: Position[] } | { type: 'fill'; pos: Position };
 
-export interface PrepParams { smooth: number }
-export const prepKey = (p: PrepParams) => String(p.smooth);
+/** How the image is prepared: smoothing, then colour adjustments (brightness/contrast −100..100, saturation in %). */
+export interface PrepParams { smooth: number; bright: number; contrast: number; sat: number }
+export const prepKey = (p: PrepParams) => [p.smooth, p.bright, p.contrast, p.sat].join('|');
 export interface RunParams extends PrepParams {
   picks: Pick[];
   ops: MaskOp[];
@@ -113,11 +114,28 @@ function median(src: Uint8ClampedArray, w: number, h: number, r: number): Uint8C
   return out;
 }
 
+/** Brightness, contrast (around mid-grey) and saturation (away from each pixel's own grey), in place. */
+function adjustColours(rgb: Uint8ClampedArray, n: number, p: PrepParams) {
+  const b = (p.bright ?? 0) * 1.28;
+  const c = p.contrast ?? 0;
+  const k = c >= 0 ? 1 + c / 25 : 1 + c / 100; // +100 → 5×, −100 → flat
+  const s = (p.sat ?? 100) / 100;
+  if (!b && k === 1 && s === 1) return;
+  const lut = new Uint8ClampedArray(256).map((_, v) => Math.round((v - 128) * k + 128 + b));
+  for (let i = 0; i < n; i++) {
+    const o = i * 4;
+    let R = lut[rgb[o]], G = lut[rgb[o + 1]], B = lut[rgb[o + 2]];
+    if (s !== 1) { const y = 0.299 * R + 0.587 * G + 0.114 * B; R = y + (R - y) * s; G = y + (G - y) * s; B = y + (B - y) * s; }
+    rgb[o] = R; rgb[o + 1] = G; rgb[o + 2] = B; // clamped by the array
+  }
+}
+
 export function prepare(r: Raster, p: PrepParams): Prepared {
   const n = r.w * r.h;
   const valid = new Uint8Array(n);
   for (let i = 0; i < n; i++) valid[i] = r.rgba[i * 4 + 3] > 16 ? 1 : 0;
   const rgb = p.smooth > 0 ? median(r.rgba, r.w, r.h, Math.round(p.smooth)) : new Uint8ClampedArray(r.rgba);
+  adjustColours(rgb, n, p);
   const lab = new Float32Array(n * 3);
   // Lab via a small cache: many pixels share colours.
   const cache = new Map<number, [number, number, number]>();
@@ -207,8 +225,8 @@ export function run(r: Raster, prep: Prepared, p: RunParams): RunResult {
       if (bd <= reach2) { cls[i] = best; if (usable[best].kind === 'pick') mask[i] = 1; }
     }
   }
-  // "What the computer sees": the smoothed image, with every pixel that matches a group in that group's colour
-  // and everything else dimmed to grey.
+  // "What the computer sees": the prepared image (smoothed, colours adjusted) in full colour, with every pixel
+  // that matches a group painted in that group's colour.
   let preview: Uint8ClampedArray | undefined;
   if (p.wantPreview) {
     preview = new Uint8ClampedArray(prep.rgb);
@@ -217,7 +235,6 @@ export function run(r: Raster, prep: Prepared, p: RunParams): RunResult {
       if (!valid[i]) continue;
       const c = cls[i];
       if (c >= 0) { preview[i * 4] = cols[c][0] * 0.85 + preview[i * 4] * 0.15; preview[i * 4 + 1] = cols[c][1] * 0.85 + preview[i * 4 + 1] * 0.15; preview[i * 4 + 2] = cols[c][2] * 0.85 + preview[i * 4 + 2] * 0.15; }
-      else { const g = (preview[i * 4] * 0.3 + preview[i * 4 + 1] * 0.59 + preview[i * 4 + 2] * 0.11) * 0.45; preview[i * 4] = g; preview[i * 4 + 1] = g; preview[i * 4 + 2] = g; }
     }
   }
   const empty: RunResult = { features: [], picks: pickInfo, areaM2: 0, lengthM: 0, others: noOthers, preview };
@@ -256,9 +273,7 @@ export function run(r: Raster, prep: Prepared, p: RunParams): RunResult {
   let areaM2 = 0, lengthM = 0;
   const geo = (q: [number, number]) => toGeo(r, q[0], q[1]);
   if (p.output === 'polygon') {
-    const values = new Float64Array(n);
-    for (let i = 0; i < n; i++) values[i] = mask[i];
-    const [mp] = contours().size([w, h]).thresholds([0.5])(values as unknown as number[]);
+    const [mp] = contours().size([w, h]).thresholds([0.5])(mask as unknown as number[]);
     const tolPx = Math.max(0.3, p.simplify / r.mpp);
     for (const poly of mp.coordinates) {
       const rings = poly.map((ring) => safeSimplify(ring as [number, number][], tolPx)).filter((ring) => ring.length >= 4);
@@ -291,9 +306,7 @@ function leftOut(all: Uint8Array, kept: Uint8Array, w: number, h: number, minPx:
   let px = 0;
   for (let i = 0; i < n; i++) px += rest[i];
   if (!px) return { count: 0, areaM2: 0, features: [] };
-  const values = new Float64Array(n);
-  for (let i = 0; i < n; i++) values[i] = rest[i];
-  const [mp] = contours().size([w, h]).thresholds([0.5])(values as unknown as number[]);
+  const [mp] = contours().size([w, h]).thresholds([0.5])(rest as unknown as number[]);
   const tol = Math.max(0.5, 1 / r.mpp);
   const features: Feature[] = mp.coordinates.map((poly) => ({
     type: 'Feature', properties: {},

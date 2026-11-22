@@ -1,9 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Icon } from '../icons';
 import { lastMapId } from '../library';
+import { logout, useSession } from '../session';
 
 export function Rail({ onExport }: { onExport?: () => void }) {
   const loc = useLocation();
+  const me = useSession();
+  const staff = me.user.isStaff;
   const mapId = lastMapId();
   const at = (p: string) => loc.pathname === p || (p !== '/' && loc.pathname.startsWith(p));
   const editorPath = mapId ? `/kaart/${mapId}` : null;
@@ -16,13 +19,16 @@ export function Rail({ onExport }: { onExport?: () => void }) {
       ) : (
         <button className="rail" disabled title="Open eerst een kaart" aria-label="Editor"><Icon name="map" /></button>
       )}
-      {onExport ? (
-        <button className="rail" onClick={onExport} title="Exporteren" aria-label="Exporteren"><Icon name="upload" /></button>
+      {staff && (onExport ? (
+        <button className="rail" onClick={onExport} title="Publiceren" aria-label="Publiceren"><Icon name="upload" /></button>
       ) : editorPath ? (
-        <Link to={`${editorPath}?export=1`} className="rail" title="Exporteren" aria-label="Exporteren"><Icon name="upload" /></Link>
+        <Link to={`${editorPath}?export=1`} className="rail" title="Publiceren" aria-label="Publiceren"><Icon name="upload" /></Link>
       ) : (
-        <button className="rail" disabled title="Open eerst een kaart" aria-label="Exporteren"><Icon name="upload" /></button>
-      )}
+        <button className="rail" disabled title="Open eerst een kaart" aria-label="Publiceren"><Icon name="upload" /></button>
+      ))}
+      {staff && <Link to="/beheer" className={`rail ${at('/beheer') ? 'on' : ''}`} title="Beheer" aria-label="Beheer"><Icon name="users" /></Link>}
+      <div style={{ flex: 1 }} />
+      <button className="rail" onClick={logout} title={`Uitloggen (${me.user.email})`} aria-label="Uitloggen"><Icon name="logout" /></button>
     </nav>
   );
 }

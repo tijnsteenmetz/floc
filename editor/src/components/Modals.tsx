@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FeatureCollection } from 'geojson';
-import { api, fileUrl, type ExportPlan, type Job, type ParsedLayer } from '../api';
+import { api, fileUrl, type PublishPlan, type Job, type ParsedLayer } from '../api';
 import { Icon } from '../icons';
 import { useLibrary } from '../library';
 import type { Category, Facility, Layer, Project, VectorKind } from '../types';
 import { KIND_INFO, makeLayer, newId, isVectorKind } from '../types';
 import { fmtNum, normaliseFeatures } from '../geo';
 
-export function ExportModal({ pid, onClose }: { pid: string; onClose: () => void }) {
-  const [plan, setPlan] = useState<ExportPlan | null>(null);
+export function PublishModal({ pid, onClose }: { pid: string; onClose: () => void }) {
+  const [plan, setPlan] = useState<PublishPlan | null>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  useEffect(() => { api.exportPlan(pid).then(setPlan).catch((e) => setErr(e.message)); }, [pid]);
+  useEffect(() => { api.publishPlan(pid).then(setPlan).catch((e) => setErr(e.message)); }, [pid]);
   useEffect(() => {
     if (!job || job.status !== 'running') return;
     const t = window.setTimeout(() => api.job(job.id).then(setJob).catch((e) => setErr(e.message)), 700);
@@ -19,30 +19,28 @@ export function ExportModal({ pid, onClose }: { pid: string; onClose: () => void
   }, [job]);
   const start = async () => {
     setErr(null);
-    try { const { job: id } = await api.startExport(pid); setJob({ id, status: 'running', message: 'Starten', progress: 0 }); }
+    try { const { job: id } = await api.startPublish(pid); setJob({ id, status: 'running', message: 'Starten', progress: 0 }); }
     catch (e: any) { setErr(e.message); }
   };
   const running = job?.status === 'running';
+  const mb = (b: number) => `${(b / 1e6).toFixed(b < 1e7 ? 1 : 0)} MB`;
   return (
     <div className="overlay" onClick={() => !running && onClose()}>
       <div className="modal" style={{ width: 640 }} onClick={(e) => e.stopPropagation()}>
         {job?.status === 'done' ? (
           <div className="col" style={{ alignItems: 'center', gap: 14, padding: '20px 0', textAlign: 'center' }}>
             <div style={{ width: 64, height: 64, borderRadius: 20, background: 'var(--lime)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={30} stroke={2.4} /></div>
-            <span style={{ fontSize: 20, fontWeight: 600 }}>Geëxporteerd</span>
-            <span className="muted" style={{ fontSize: 14, maxWidth: 440 }}>{job.result?.length} bestanden in <code style={{ color: 'var(--text)' }}>{plan?.target}</code>. Build de app opnieuw in Xcode om de kaart op je iPhone te zien.</span>
-            <div className="row" style={{ marginTop: 6 }}>
-              <button className="btn" onClick={() => api.reveal(pid).catch((e) => setErr(e.message))}>Map openen in Finder</button>
-              <button className="btn lime" onClick={onClose}>Terug naar editor</button>
-            </div>
+            <span style={{ fontSize: 20, fontWeight: 600 }}>Versie {job.result?.version} gepubliceerd</span>
+            <span className="muted" style={{ fontSize: 14, maxWidth: 440 }}>{job.result?.files} bestanden, {mb(job.result?.size ?? 0)}. Bezoekers zien de update de volgende keer dat ze de app openen met bereik.</span>
+            <button className="btn lime" onClick={onClose}>Terug naar editor</button>
           </div>
         ) : (
           <>
             <div className="row" style={{ gap: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--lime)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="upload" stroke={2} /></div>
               <div className="col" style={{ gap: 2 }}>
-                <h2>Exporteren voor de app</h2>
-                <span className="muted" style={{ fontSize: 13 }}>→ <code style={{ color: 'var(--text)' }}>{plan?.target ?? '…'}</code></span>
+                <h2>Publiceren naar de app</h2>
+                <span className="muted" style={{ fontSize: 13 }}>{plan ? (plan.last ? `Nu in de app: versie ${plan.last.version} (${new Date(plan.last.published).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}). Dit wordt versie ${plan.last.version + 1}.` : 'Nog niet gepubliceerd. Dit wordt versie 1.') : '…'}</span>
               </div>
             </div>
             {!plan && !err && <div className="row muted"><span className="spinner" />Overzicht maken…</div>}
@@ -58,10 +56,13 @@ export function ExportModal({ pid, onClose }: { pid: string; onClose: () => void
                 ))}
               </div>
             )}
-            {plan?.exists && !running && (
+            {plan?.blocked && (
               <div className="row" style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(245,184,74,.1)', color: 'var(--warn)', fontSize: 13 }}>
-                <Icon name="warn" size={16} />De bestaande map wordt overschreven (alleen de bestanden hierboven). {plan.items.some((i) => i.file === 'aerial.mbtiles') ? 'Luchtfoto ophalen kan een paar minuten duren.' : ''}
+                <Icon name="warn" size={16} />{plan.blocked}
               </div>
+            )}
+            {plan && !plan.blocked && !running && plan.items.some((i) => i.file === 'aerial.mbtiles') && (
+              <span className="faint" style={{ fontSize: 12 }}>Is het terrein veranderd, dan wordt de luchtfoto opnieuw opgehaald. Dat kan een paar minuten duren. Anders wordt die van de vorige versie hergebruikt.</span>
             )}
             {running && (
               <div className="col" style={{ gap: 8 }}>
@@ -72,7 +73,7 @@ export function ExportModal({ pid, onClose }: { pid: string; onClose: () => void
             {(err || job?.status === 'error') && <span style={{ color: 'var(--danger)', fontSize: 13 }}>{err ?? job?.message}</span>}
             <div className="actions">
               <button className="btn" disabled={running} onClick={onClose}>Annuleren</button>
-              <button className="btn lime" disabled={!plan || running} onClick={start}>{running && <span className="spinner" />}Exporteren</button>
+              <button className="btn lime" disabled={!plan || !!plan.blocked || running} onClick={start}>{running && <span className="spinner" />}Publiceren</button>
             </div>
           </>
         )}

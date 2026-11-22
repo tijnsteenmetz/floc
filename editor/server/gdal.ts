@@ -28,7 +28,7 @@ const env = {
 };
 
 export function gdal(tool: string, args: string[], opts: { timeout?: number } = {}): Promise<string> {
-  if (!gdalAvailable) return Promise.reject(new Error('QGIS (met GDAL) niet gevonden in /Applications'));
+  if (!gdalAvailable) return Promise.reject(new Error('Dit kan alleen in de studio op de Mac: daar draait GDAL (uit QGIS). Start daar `npm run dev` in editor/.'));
   return new Promise((resolve, reject) => {
     execFile(path.join(BIN, tool), args, { env, maxBuffer: 256 * 1024 * 1024, timeout: opts.timeout ?? 10 * 60_000 }, (err, stdout, stderr) => {
       if (err) reject(new Error(`${tool} mislukt: ${(stderr || err.message).toString().trim().split('\n').slice(-3).join(' ')}`));

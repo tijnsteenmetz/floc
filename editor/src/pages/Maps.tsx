@@ -6,12 +6,14 @@ import { Rail } from '../components/Rail';
 import { setLastMapId, lastMapId, useLibrary } from '../library';
 import type { ProjectSummary } from '../types';
 import { KIND_INFO } from '../types';
+import { useSession } from '../session';
 
 const VECTOR_ACCEPT = '.geojson,.json,.gpkg,.kml,.kmz,.gpx,.zip,.dxf,.csv';
 
 export function Maps() {
   const nav = useNavigate();
   const { lib } = useLibrary();
+  const staff = useSession().user.isStaff;
   const [maps, setMaps] = useState<ProjectSummary[] | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [modal, setModal] = useState<null | { type: 'new' } | { type: 'import' } | { type: 'rename'; map: ProjectSummary } | { type: 'delete'; map: ProjectSummary }>(null);
@@ -33,11 +35,11 @@ export function Maps() {
       <main className="page" style={{ position: 'relative' }}>
         <div className="row" style={{ alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
           <div className="col grow" style={{ gap: 6 }}>
-            <span className="muted" style={{ fontSize: 13 }}>floc editor</span>
+            <span className="muted" style={{ fontSize: 13 }}>floc studio</span>
             <h1>Kaarten</h1>
           </div>
-          <button className="btn" onClick={() => setModal({ type: 'import' })}><Icon name="download" size={16} />Importeren</button>
-          <button className="btn lime" onClick={() => setModal({ type: 'new' })}><Icon name="plus" size={16} stroke={2.2} />Nieuwe kaart</button>
+          {staff && <button className="btn" onClick={() => setModal({ type: 'import' })}><Icon name="download" size={16} />Importeren</button>}
+          {staff && <button className="btn lime" onClick={() => setModal({ type: 'new' })}><Icon name="plus" size={16} stroke={2.2} />Nieuwe kaart</button>}
         </div>
 
         <div className="cards">
@@ -47,13 +49,17 @@ export function Maps() {
               <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="row" style={{ gap: 8 }}>
                   <span className="grow" style={{ fontSize: 16, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
-                  <button className="sq sm" style={{ width: 34, height: 34, borderRadius: 10 }} aria-label="Meer acties" onClick={(e) => { e.stopPropagation(); setMenu(menu === m.id ? null : m.id); }}>
+                  {staff && <button className="sq sm" style={{ width: 34, height: 34, borderRadius: 10 }} aria-label="Meer acties" onClick={(e) => { e.stopPropagation(); setMenu(menu === m.id ? null : m.id); }}>
                     <Icon name="more" size={16} stroke={2.4} />
-                  </button>
+                  </button>}
                 </div>
                 {m.notes && <span className="muted" style={{ fontSize: 13 }}>{m.notes}</span>}
                 <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                   {[...new Set(m.layerKinds)].filter((k) => k !== 'voorzieningen').map((k) => <span key={k} className="pill">{KIND_INFO[k].label}</span>)}
+                </div>
+                <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                  {m.org && <span className="pill">{m.org}</span>}
+                  <span className="pill" style={m.version ? { background: 'rgba(212,245,106,.12)', color: 'var(--lime)' } : undefined}>{m.version ? `In de app · v${m.version}` : 'Concept'}</span>
                 </div>
                 <span className="faint" style={{ fontSize: 12 }}>Gewijzigd {fmtDate(m.updated)}</span>
               </div>
@@ -67,11 +73,12 @@ export function Maps() {
               )}
             </div>
           ))}
-          <button onClick={() => setModal({ type: 'new' })} style={{ minHeight: 340, borderRadius: 20, border: '1.5px dashed rgba(255,255,255,.14)', background: 'transparent', color: 'var(--muted)', fontSize: 15, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer' }}>
+          {!staff && maps && !maps.length && <span className="muted">Er zijn nog geen kaarten met je organisatie gedeeld.</span>}
+          {staff && <button onClick={() => setModal({ type: 'new' })} style={{ minHeight: 340, borderRadius: 20, border: '1.5px dashed rgba(255,255,255,.14)', background: 'transparent', color: 'var(--muted)', fontSize: 15, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer' }}>
             <span style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--sq)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--lime)' }}><Icon name="plus" stroke={2.2} /></span>
             Nieuwe kaart
             <span className="faint" style={{ fontSize: 12 }}>of dupliceer een bestaande via ···</span>
-          </button>
+          </button>}
         </div>
 
 
@@ -84,7 +91,7 @@ export function Maps() {
           <div className="overlay" onClick={() => setModal(null)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
               <h2>„{modal.map.name}” verwijderen?</h2>
-              <p className="sub">De kaart en al haar lagen worden verwijderd uit de editor. Een eerder geëxporteerde map in <code>maps/</code> blijft staan.</p>
+              <p className="sub">De kaart, al haar lagen, beelden en gepubliceerde versies worden verwijderd. Ook bezoekers kunnen hem daarna niet meer downloaden.</p>
               <div className="actions">
                 <button className="btn" onClick={() => setModal(null)}>Annuleren</button>
                 <button className="btn danger" onClick={async () => { await api.deleteProject(modal.map.id); if (lastMapId() === modal.map.id) setLastMapId(null); setModal(null); load(); }}>Verwijderen</button>

@@ -76,10 +76,20 @@ async function writeGeo(dir: string, file: string, features: Feature[]) {
   await fs.writeFile(path.join(dir, file), JSON.stringify({ type: 'FeatureCollection', features }));
 }
 
-export async function runExport(p: Project, lib: Library, progress: (msg: string, frac: number) => void): Promise<string[]> {
+/** Identifies the aerial photo an export would fetch; equal keys = same tiles, so a publish can reuse the previous file. */
+export function aerialKey(p: Project): string | null {
+  const pdok = included(p).find((l) => l.kind === 'pdok' && l.visible);
+  const site = terrainBounds(p);
+  if (!pdok || !site) return null;
+  return `${pdok.pdokLayer ?? 'Actueel_orthoHR'}:${pad(site, AERIAL_MARGIN_M).map((v) => v.toFixed(5)).join(',')}:14-20`;
+}
+
+export const MANAGED_FILES = MANAGED;
+
+export async function runExport(p: Project, lib: Library, progress: (msg: string, frac: number) => void, opts: { skipAerial?: boolean } = {}): Promise<string[]> {
   const { dir } = exportTarget(p);
   await fs.mkdir(dir, { recursive: true });
-  for (const f of MANAGED) await fs.rm(path.join(dir, f), { force: true, recursive: true });
+  for (const f of MANAGED) if (!(opts.skipAerial && f === 'aerial.mbtiles')) await fs.rm(path.join(dir, f), { force: true, recursive: true });
   const written: string[] = [];
   const layers = included(p);
 
@@ -152,7 +162,7 @@ export async function runExport(p: Project, lib: Library, progress: (msg: string
   }
 
   const pdok = layers.find((l) => l.kind === 'pdok' && l.visible);
-  if (pdok && site) {
+  if (pdok && site && !opts.skipAerial) {
     const bb = pad(site, AERIAL_MARGIN_M);
     await writeAerialMbtiles(path.join(dir, 'aerial.mbtiles'), pdok.pdokLayer ?? 'Actueel_orthoHR', bb, 14, 20, (done, total) =>
       progress(`Luchtfoto ophalen: ${done} / ${total} tegels`, 0.2 + 0.8 * (done / total)),

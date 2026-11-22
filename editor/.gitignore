@@ -3,3 +3,4 @@ dist/
 projects/*/images/
 projects/*/tmp/
 *.mbtiles
+.cache/

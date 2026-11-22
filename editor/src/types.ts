@@ -96,6 +96,11 @@ export interface Project {
   view?: { center: [number, number]; zoom: number };
   layers: Layer[];
   facilities: Facility[];
+  /** Server-side save counter, to detect someone else saving in between. */
+  revision?: number;
+  /** What the signed-in user may do with this map. */
+  access?: 'edit' | 'view';
+  org?: { id: string; name: string };
 }
 
 export interface ProjectSummary {
@@ -104,6 +109,9 @@ export interface ProjectSummary {
   notes: string;
   updated: string;
   layerKinds: LayerKind[];
+  org?: string;
+  /** Latest published version, if any. */
+  version?: number;
   thumb: { lines: number[][][]; polys: { pts: number[][]; color: string }[]; dots: { x: number; y: number; color: string }[] };
 }
 

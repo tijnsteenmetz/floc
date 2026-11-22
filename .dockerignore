@@ -1,0 +1,12 @@
+**/node_modules
+**/.DS_Store
+editor/.cache
+editor/projects
+editor/dist
+build
+maps
+qgis
+Floc
+Floc.xcodeproj
+*.mbtiles
+.git

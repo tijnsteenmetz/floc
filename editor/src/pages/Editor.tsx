@@ -20,7 +20,7 @@ import { LayersCard } from '../components/LayersCard';
 import { LayerPanel } from '../components/LayerPanel';
 import { AddLayerMenu } from '../components/AddLayerMenu';
 import { FacilityCard, FeatureCard, PlaceCard, RouteCard, DrawCard, FillCard, VecCard, VEC_DEFAULTS, type PlaceState, type RouteState, type VecState, type VecClick } from '../components/Cards';
-import { ExportModal, ImportFileModal, ImageImportModal, CategoryModal } from '../components/Modals';
+import { PublishModal, ImportFileModal, ImageImportModal, CategoryModal } from '../components/Modals';
 
 export type Tool = 'select' | 'line' | 'polygon' | 'rect' | 'hole' | 'fill' | 'wand' | 'place' | 'route';
 const TOOLS: { id: Tool; label: string; key: string; icon: IconName }[] = [
@@ -67,13 +67,13 @@ export function Editor() {
   const [navAdd, setNavAdd] = useState<string | null>(null);
   const sampleRef = useRef<Sample | null>(null);
   const vectorizerRef = useRef<Vectorizer | null>(null);
-  const [vec, setVec] = useState<VecState>(() => ({ ...VEC_DEFAULTS, ...readPref<Partial<VecState>>('vec', {}), sourceId: null, picks: [], ops: [], seps: [], click: 'pick' }));
+  const [vec, setVec] = useState<VecState>(() => ({ ...VEC_DEFAULTS, ...readPref<Partial<VecState>>('vec', {}), sourceId: null, picks: [], ops: [], click: 'pick' }));
   const [vecDraft, setVecDraft] = useState<Position[]>([]);
   const [vecRes, setVecRes] = useState<RunResult | null>(null);
   const [vecBusy, setVecBusy] = useState<string | null>(null);
   const [sampleTick, setSampleTick] = useState(0);
   useEffect(() => {
-    const { sourceId, picks, ops, click, name, target, seps, ...settings } = vec;
+    const { sourceId, picks, ops, click, name, target, ...settings } = vec;
     writePref('vec', settings);
   }, [vec]);
   useEffect(() => { writePref('snapPx', snapPx); writePref('holeWalkable', holeWalkable); writePref('cutBelow', cutBelow); writePref('fillGap', fillGap); }, [snapPx, holeWalkable, cutBelow, fillGap]);
@@ -163,20 +163,24 @@ export function Editor() {
   }, [params]);
 
   // ---------- autosave ----------
+  // Organisers only look: their changes (e.g. panning, toggling layers) stay in the browser.
+  const readonly = project?.access === 'view';
   useEffect(() => {
     if (saveState !== 'dirty' || !project) return;
+    if (readonly) { setSaveState('saved'); return; }
     const t = window.setTimeout(async () => {
       setSaveState('saving');
       try {
         await api.saveProject(projectRef.current!);
         setSaveState((s) => (s === 'saving' ? 'saved' : s));
-      } catch { setSaveState('error'); }
+      } catch (e: any) { setSaveState('error'); setToast({ msg: e.message, err: true }); }
     }, 600);
     return () => window.clearTimeout(t);
-  }, [project, saveState]);
+  }, [project, saveState, readonly]);
   const flushSave = useCallback(async () => {
+    if (readonly) return;
     if (projectRef.current && saveState !== 'saved') { await api.saveProject(projectRef.current); setSaveState('saved'); }
-  }, [saveState]);
+  }, [saveState, readonly]);
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => { if (saveState === 'dirty' || saveState === 'saving') e.preventDefault(); };
     window.addEventListener('beforeunload', warn);
@@ -246,7 +250,7 @@ export function Editor() {
     setVecBusy('Beeld ophalen…');
     try {
       // Keep earlier clicks and drawn edits inside the new image.
-      const include: Position[] = [...vec.picks.map((k) => k.pos), ...vec.seps.map((k) => k.pos), ...vec.ops.flatMap((o) => (o.type === 'fill' ? [o.pos] : o.type === 'line' ? o.line : o.ring)), ...(pos ? [pos] : []), ...extra];
+      const include: Position[] = [...vec.picks.map((k) => k.pos), ...vec.ops.flatMap((o) => (o.type === 'fill' ? [o.pos] : o.type === 'line' ? o.line : o.ring)), ...(pos ? [pos] : []), ...extra];
       const smp = await sampleLayer(mapRef.current!, src, p.id, vec.res, include);
       sampleRef.current = smp;
       setSampleTick((t) => t + 1);
@@ -260,27 +264,26 @@ export function Editor() {
   useEffect(() => {
     if (tool !== 'wand' || !vec.sourceId) return;
     const cur = sampleRef.current;
-    if ((vec.picks.length || vec.ops.length || vec.seps.length || vec.showPrep) && (!cur || cur.layerId !== vec.sourceId || cur.res !== vec.res)) void ensureSample();
+    if ((vec.picks.length || vec.ops.length || vec.showPrep) && (!cur || cur.layerId !== vec.sourceId || cur.res !== vec.res)) void ensureSample();
   }, [tool, vec.sourceId, vec.res, vec.showPrep]);
   useEffect(() => {
     const smp = sampleRef.current;
-    if (tool !== 'wand' || !smp || smp.layerId !== vec.sourceId || (!vec.picks.length && !vec.ops.length && !vec.seps.length && !vec.showPrep)) { setVecRes(null); return; }
+    if (tool !== 'wand' || !smp || smp.layerId !== vec.sourceId || (!vec.picks.length && !vec.ops.length && !vec.showPrep)) { setVecRes(null); return; }
     let live = true;
     const t = window.setTimeout(async () => {
       vectorizerRef.current ??= new Vectorizer();
       setVecBusy('Rekenen…');
       try {
         const res = await vectorizerRef.current.run(smp, {
-          picks: vec.picks, ops: vec.ops, scope: vec.scope, tolerance: vec.tolerance, lightWeight: vec.lightWeight, smooth: vec.smooth, merge: vec.merge,
-          contrast: vec.contrast, saturation: vec.saturation, seps: vec.seps, sepStrength: vec.sepStrength,
-          close: vec.close, speck: vec.speck, holes: vec.holes, output: vec.output, simplify: vec.simplify, minLength: vec.minLength, wantPreview: vec.showPrep,
+          picks: vec.picks, ops: vec.ops, scope: vec.scope, reach: vec.reach, smooth: vec.smooth,
+          bridge: vec.bridge, speck: vec.speck, holes: vec.holes, output: vec.output, simplify: vec.simplify, minLength: vec.minLength, wantPreview: vec.showPrep,
         });
         if (live && res) setVecRes(res);
       } catch (e: any) { if (live) setToast({ msg: `Vectoriseren mislukt: ${e.message}`, err: true }); }
       finally { if (live) setVecBusy(null); }
     }, 120);
     return () => { live = false; window.clearTimeout(t); };
-  }, [tool, sampleTick, vec.sourceId, vec.picks, vec.ops, vec.scope, vec.tolerance, vec.lightWeight, vec.smooth, vec.merge, vec.contrast, vec.saturation, vec.seps, vec.sepStrength, vec.close, vec.speck, vec.holes, vec.output, vec.simplify, vec.minLength, vec.showPrep]);
+  }, [tool, sampleTick, vec.sourceId, vec.picks, vec.ops, vec.scope, vec.reach, vec.smooth, vec.bridge, vec.speck, vec.holes, vec.output, vec.simplify, vec.minLength, vec.showPrep]);
   // "What the computer sees": the prepared image on the map.
   useEffect(() => {
     const map = mapRef.current;
@@ -412,10 +415,8 @@ export function Editor() {
         if (vecDraft.length >= 2) feats.push(turf.lineString(vecDraft, { color: c, lw: 2, dash: vec.click !== 'line' }));
         vecDraft.forEach((q, i) => feats.push(turf.point(q, { color: c, fill: i === 0 ? c : '#0C0D0E', r: i === 0 ? 5 : 3.5 })));
       }
-      const kc: Record<PickKind, string> = { pick: '#D4F56A', exclude: '#FF6B6B', ignore: '#94A3B8' };
-      vec.picks.forEach((pk, i) => feats.push(turf.point(pk.pos, { color: kc[pk.kind], fill: (vec.showPrep ? vecRes?.picks[i]?.hex : vecRes?.picks[i]?.seen) ?? '#0C0D0E', r: 6 })));
-      // Colours to pull apart: filled with the clicked colour, ringed with the colour it becomes.
-      vec.seps.forEach((sp, i) => feats.push(turf.point(sp.pos, { color: vecRes?.sep[i]?.to ?? '#FFFFFF', fill: vecRes?.sep[i]?.from ?? '#0C0D0E', r: 7 })));
+      const kc: Record<PickKind, string> = { pick: '#D4F56A', exclude: '#FF6B6B' };
+      vec.picks.forEach((pk, i) => feats.push(turf.point(pk.pos, { color: kc[pk.kind], fill: (vec.showPrep ? vecRes?.picks[i]?.shown : vecRes?.picks[i]?.hex) ?? '#0C0D0E', r: 6 })));
     }
     for (const f of project.facilities) {
       if (!f.nav?.length || !facShown(f)) continue;
@@ -427,7 +428,7 @@ export function Editor() {
       }
     }
     src.setData({ type: 'FeatureCollection', features: feats });
-  }, [vecRes, vec.showPrep, vec.ops, vec.picks, vec.seps, vec.click, vecDraft, tool, project?.facilities, selection, mapReady, lib.categories, project?.layers, facShown, sampleTick, vec.sourceId]);
+  }, [vecRes, vec.showPrep, vec.ops, vec.picks, vec.click, vecDraft, tool, project?.facilities, selection, mapReady, lib.categories, project?.layers, facShown, sampleTick, vec.sourceId]);
 
   // Route geometry
   useEffect(() => {
@@ -913,7 +914,7 @@ export function Editor() {
   // ---------- colour vectorising: clicks ----------
   const wandAt = async (e: maplibregl.MapMouseEvent, ll: Position) => {
     const oe = e.originalEvent;
-    const mode: VecClick = oe.altKey ? 'exclude' : oe.metaKey || oe.ctrlKey ? 'ignore' : vec.click;
+    const mode: VecClick = oe.altKey ? 'exclude' : vec.click;
     if (mode === 'add' || mode === 'cut' || mode === 'line') {
       const map = mapRef.current!;
       const d = vecDraft;
@@ -926,7 +927,6 @@ export function Editor() {
     const smp = await ensureSample(ll);
     if (!smp) return;
     if (mode === 'fill') { setVec((v) => ({ ...v, ops: [...v.ops, { type: 'fill', pos: ll }] })); return; }
-    if (mode === 'sep') { setVec((v) => ({ ...v, seps: [...v.seps, { pos: ll }], showPrep: true })); return; }
     setVec((v) => ({ ...v, picks: [...v.picks, { kind: mode, pos: ll }] }));
   };
   const finishDraft = () => {
@@ -941,7 +941,7 @@ export function Editor() {
   };
   const undoVecStep = () => {
     if (vecDraft.length) { setVecDraft((d) => d.slice(0, -1)); return; }
-    setVec((v) => (v.click === 'sep' && v.seps.length ? { ...v, seps: v.seps.slice(0, -1) } : v.ops.length ? { ...v, ops: v.ops.slice(0, -1) } : v.picks.length ? { ...v, picks: v.picks.slice(0, -1) } : { ...v, seps: v.seps.slice(0, -1) }));
+    setVec((v) => (v.ops.length ? { ...v, ops: v.ops.slice(0, -1) } : { ...v, picks: v.picks.slice(0, -1) }));
   };
   const vecTargetLayer = (): Layer | null => {
     const p = projectRef.current!;
@@ -1047,10 +1047,14 @@ export function Editor() {
           <button className="sq" onClick={undo} disabled={!past.current.length} title="Ongedaan maken (⌘Z)" aria-label="Ongedaan maken"><Icon name="undo" size={18} /></button>
           <button className="sq" onClick={redo} disabled={!future.current.length} title="Opnieuw (⇧⌘Z)" aria-label="Opnieuw"><Icon name="redo" size={18} /></button>
           <div className="grow" style={{ pointerEvents: 'none' }} />
-          <div className="row" style={{ gap: 4, padding: 4, background: 'var(--sq)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14 }}>
+          {readonly ? (
+            <div className="row" style={{ gap: 8, padding: '0 14px', height: 48, background: 'var(--sq)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, pointerEvents: 'auto', fontSize: 13 }}>
+              <Icon name="eye" size={16} />Alleen bekijken · wijzigingen worden niet opgeslagen
+            </div>
+          ) : <div className="row" style={{ gap: 4, padding: 4, background: 'var(--sq)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14 }}>
             <button className="btn lime" style={{ height: 40 }} onClick={() => { setTool('place'); setSelection(null); }}><Icon name="plus" size={16} stroke={2.2} />Voorziening</button>
-            <button className="btn" style={{ height: 40 }} onClick={openExport}>Exporteren</button>
-          </div>
+            <button className="btn" style={{ height: 40 }} onClick={openExport}>Publiceren</button>
+          </div>}
         </div>
 
         <div className="left-stack">
@@ -1058,7 +1062,7 @@ export function Editor() {
             <div className="row">
               <button onClick={() => nav('/')} aria-label="Terug naar kaarten" title="Terug naar kaarten" style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--text)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, cursor: 'pointer', flexShrink: 0 }}><Icon name="back" size={16} stroke={2.2} /></button>
               <span className="grow" style={{ fontSize: 16, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={project.name}>{project.name}</span>
-              <SaveBadge state={saveState} onRetry={() => setSaveState('dirty')} />
+              {readonly ? <span className="muted" style={{ fontSize: 12, flexShrink: 0 }}>alleen bekijken</span> : <SaveBadge state={saveState} onRetry={() => setSaveState('dirty')} />}
             </div>
             <div className="grid3">
               <div className="tile"><span className="k">Paden</span><span className="v">{stats.paths}</span></div>
@@ -1173,23 +1177,6 @@ export function Editor() {
             onRemovePick={(i) => setVec((v) => ({ ...v, picks: v.picks.filter((_, j) => j !== i) }))}
             hasSample={!!sampleRef.current && sampleRef.current.layerId === vec.sourceId}
             onRefetch={() => { void ensureSample(undefined, true); }}
-            onPalette={(hex, kind) => {
-              // Clicking a merged colour picks it: take a pixel of that colour from the prepared image.
-              const smp = sampleRef.current;
-              const prev = vecRes?.preview;
-              if (!smp || !prev) { setToast({ msg: 'Zet „Toon bewerkt beeld” aan om kleuren uit het palet te kiezen', err: true }); return; }
-              const t = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-              const { w, h } = smp.raster;
-              for (let k = 0; k < w * h; k += 7) {
-                if (Math.abs(prev[k * 4] - t[0]) <= 1 && Math.abs(prev[k * 4 + 1] - t[1]) <= 1 && Math.abs(prev[k * 4 + 2] - t[2]) <= 1) {
-                  const x = k % w, y = Math.floor(k / w);
-                  const lon = (smp.raster.x0 + (x + 0.5) * smp.raster.m) / 6378137 * 180 / Math.PI;
-                  const lat = (2 * Math.atan(Math.exp((smp.raster.y0 - (y + 0.5) * smp.raster.m) / 6378137)) - Math.PI / 2) * 180 / Math.PI;
-                  setVec((v) => ({ ...v, picks: [...v.picks, { kind, pos: [lon, lat] }] }));
-                  return;
-                }
-              }
-            }}
           />
         ) : ['line', 'polygon', 'rect', 'hole'].includes(tool) ? (
           <DrawCard tool={tool as 'line' | 'polygon' | 'rect' | 'hole'} layer={active} snapping={snapping} setSnapping={setSnapping} snapPx={snapPx} setSnapPx={(v) => setSnapPx(clampSnap(v))}
@@ -1206,9 +1193,7 @@ export function Editor() {
           <div className="card hint"><span><span className="kbd">klik</span> binnen een gebied dat omsloten is door paden of vlakken</span><span><span className="kbd">⌘Z</span> ongedaan</span></div>
         )}
         {tool === 'wand' && !panelLayer && (
-          vec.click === 'sep' ? (
-          <div className="card hint"><span><span className="kbd">klik</span> kleur aanwijzen om uit elkaar te halen</span><span><span className="kbd">⌫</span> laatste weg</span><span>daarna stap 3: <b>Pakken</b></span></div>
-        ) : <div className="card hint"><span><span className="kbd">klik</span> kleur pakken</span><span><span className="kbd">⌥ klik</span> uitsluiten</span><span><span className="kbd">⌘ klik</span> negeren</span><span><span className="kbd">⌫</span> laatste stap</span><span><span className="kbd">↵</span> toevoegen</span></div>
+          <div className="card hint"><span><span className="kbd">klik</span> kleur pakken</span><span><span className="kbd">⌥ klik</span> uitsluiten</span><span><span className="kbd">⌫</span> laatste stap</span><span><span className="kbd">↵</span> toevoegen</span></div>
         )}
         {navAdd && !panelLayer && (
           <div className="card hint"><span><span className="kbd">klik</span> op de kaart: navigatiepunt erbij</span><span><span className="kbd">esc</span> klaar</span></div>
@@ -1227,7 +1212,7 @@ export function Editor() {
           <button className="sq" aria-label="Uitzoomen" onClick={() => mapRef.current?.zoomOut()}><Icon name="minus" size={18} stroke={2} /></button>
         </div>
 
-        {modal?.type === 'export' && <ExportModal pid={project.id} onClose={() => setModal(null)} />}
+        {modal?.type === 'export' && !readonly && <PublishModal pid={project.id} onClose={() => setModal(null)} />}
         {modal?.type === 'importFile' && (
           <ImportFileModal
             file={modal.file}

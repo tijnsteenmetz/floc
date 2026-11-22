@@ -1,0 +1,72 @@
+[
+ {
+  "id": "podium",
+  "name": "Podium",
+  "color": "#A78BFA",
+  "label": "♪",
+  "builtin": true
+ },
+ {
+  "id": "bar",
+  "name": "Bar",
+  "color": "#F5B84A",
+  "label": "BAR",
+  "builtin": true
+ },
+ {
+  "id": "eten",
+  "name": "Eten",
+  "color": "#F472B6",
+  "label": "ETEN",
+  "builtin": true
+ },
+ {
+  "id": "wc",
+  "name": "WC",
+  "color": "#F2F3F4",
+  "label": "WC",
+  "builtin": true
+ },
+ {
+  "id": "ehbo",
+  "name": "EHBO",
+  "color": "#FF6B6B",
+  "label": "+",
+  "builtin": true
+ },
+ {
+  "id": "munten",
+  "name": "Munten",
+  "color": "#D4F56A",
+  "label": "€",
+  "builtin": true
+ },
+ {
+  "id": "water",
+  "name": "Waterpunt",
+  "color": "#6BC0FF",
+  "label": "H₂O",
+  "builtin": true
+ },
+ {
+  "id": "kluis",
+  "name": "Kluisjes",
+  "color": "#94A3B8",
+  "label": "KL",
+  "builtin": true
+ },
+ {
+  "id": "ingang",
+  "name": "Ingang",
+  "color": "#2DD4BF",
+  "label": "IN",
+  "builtin": true
+ },
+ {
+  "id": "nooduitgang",
+  "name": "Nooduitgang",
+  "color": "#FF8A4C",
+  "label": "NU",
+  "builtin": true
+ }
+]

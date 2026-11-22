@@ -1,0 +1,94 @@
+{
+ "name": "Wildeburg v2 — podia, open velden, munten, bars",
+ "notes": "Podia, munten en open velden afgelezen van de plattegrond; bars zijn verzonnen. Water = jouw eigen tekening.",
+ "styles": {
+  "Begaanbare bebossing": {
+   "kind": "semi",
+   "color": "#93C5FD",
+   "fill": "arcering",
+   "width": "dun",
+   "dash": "gestreept",
+   "opacity": 1
+  },
+  "Voorzieningen": {
+   "kind": "voorzieningen",
+   "color": "#F5B84A",
+   "fill": "vol",
+   "width": "normaal",
+   "dash": "vol",
+   "opacity": 1
+  },
+  "Water": {
+   "kind": "water",
+   "color": "#2F7FB0",
+   "fill": "vol",
+   "width": "normaal",
+   "dash": "vol",
+   "opacity": 1
+  },
+  "Dichte bebossing": {
+   "kind": "bos",
+   "color": "#2F6B3A",
+   "fill": "textuur",
+   "width": "dun",
+   "dash": "vol",
+   "opacity": 1
+  },
+  "Paden": {
+   "kind": "beloopbaar",
+   "color": "#D4F56A",
+   "fill": "arcering",
+   "width": "normaal",
+   "dash": "vol",
+   "opacity": 1
+  },
+  "netl+camping+kallumaan+plattegrond+2026": {
+   "kind": "image",
+   "color": "#EFE8D6",
+   "fill": "vol",
+   "width": "normaal",
+   "dash": "vol",
+   "brightness": 0,
+   "opacity": 1
+  },
+  "WB25 - Plattegrond - Crew (2)": {
+   "kind": "image",
+   "color": "#EFE8D6",
+   "fill": "vol",
+   "width": "normaal",
+   "dash": "vol",
+   "brightness": 0,
+   "opacity": 1
+  },
+  "Luchtfoto PDOK": {
+   "kind": "pdok",
+   "color": "#66733F",
+   "fill": "vol",
+   "width": "normaal",
+   "dash": "vol",
+   "brightness": 0,
+   "opacity": 1
+  },
+  "Basiskaart BGT": {
+   "kind": "bgt",
+   "color": "#1B3524",
+   "fill": "vol",
+   "width": "normaal",
+   "dash": "vol",
+   "brightness": 0,
+   "opacity": 1
+  }
+ },
+ "site_bounds": [
+  5.8744469,
+  52.6797269,
+  5.8873696,
+  52.6865355
+ ],
+ "aerial_bounds": [
+  5.86555599543897,
+  52.67429900059707,
+  5.89626050456103,
+  52.69196339940293
+ ]
+}

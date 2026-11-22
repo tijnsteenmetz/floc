@@ -1,0 +1,264 @@
+{
+ "id": "wildenburg2026-v2",
+ "name": "Wildeburg v2 — podia, open velden, munten, bars",
+ "notes": "Podia, munten en open velden afgelezen van de plattegrond; bars zijn verzonnen. Water = jouw eigen tekening.",
+ "created": "2026-11-21T18:43:29.899Z",
+ "updated": "2026-11-22T12:28:21.623Z",
+ "layers": [
+  {
+   "id": "a130de7d-491e-40f5-a1bf-c59d9cced637",
+   "name": "Beloopbaar (paden en vlakken)",
+   "kind": "beloopbaar",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#D4F56A",
+    "fill": "arcering",
+    "width": "dik",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "7b573351-f734-4e7c-9f93-bc474bd9e53c",
+   "name": "Begaanbare bebossing",
+   "kind": "semi",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#93C5FD",
+    "fill": "arcering",
+    "width": "dun",
+    "dash": "gestreept"
+   },
+   "fields": [],
+   "snapM": 2
+  },
+  {
+   "id": "c461d670-29fa-4bbe-acf4-ed537b8568af",
+   "name": "Voorzieningen",
+   "kind": "voorzieningen",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#F5B84A",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol"
+   },
+   "fields": [],
+   "hiddenCats": []
+  },
+  {
+   "id": "301f57bb-795a-40a7-a524-c3ba6727f112",
+   "name": "Water",
+   "kind": "water",
+   "visible": false,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#2F7FB0",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "73b3a582-8963-4542-bc6e-79bcd7ab87d8",
+   "name": "Dichte bebossing",
+   "kind": "bos",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#2F6B3A",
+    "fill": "textuur",
+    "width": "dun",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "9b46bb07-d495-4973-b6b8-004235b13fd4",
+   "name": "netl+camping+kallumaan+plattegrond+2026",
+   "kind": "image",
+   "visible": false,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#EFE8D6",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol",
+    "brightness": 0
+   },
+   "fields": [],
+   "image": {
+    "sourceName": "netl+camping+kallumaan+plattegrond+2026.jpg",
+    "width": 2000,
+    "height": 1414,
+    "fullWidth": 2000,
+    "fullHeight": 1414,
+    "crop": null,
+    "gcps": [
+     {
+      "id": "0d094b03-78b3-4ddd-93c6-27dec67806d1",
+      "px": 182.38949419449406,
+      "py": 220.5030789938431,
+      "lon": 5.874378873463286,
+      "lat": 52.68291668625673
+     },
+     {
+      "id": "fa968b0c-9aee-4088-80d7-4ae5dcb4953e",
+      "px": 879.2072946916857,
+      "py": 691.0528413971708,
+      "lon": 5.880822215399888,
+      "lat": 52.68274267115797
+     },
+     {
+      "id": "d32f775e-0809-48c7-90f9-cca5af30b779",
+      "px": 1267.1400642173826,
+      "py": 493.1375143694546,
+      "lon": 5.882553597228053,
+      "lat": 52.68449740328978
+     },
+     {
+      "id": "25ebbd79-a5a0-4d78-92c4-fc6406444a73",
+      "px": 1219.0966641602179,
+      "py": 1148.7805476733397,
+      "lon": 5.884926562298062,
+      "lat": 52.6817470837743
+     },
+     {
+      "id": "e8e780c5-d998-44aa-9141-f3b6423dc994",
+      "px": 1253.8119620671143,
+      "py": 352.95296604971475,
+      "lon": 5.8818905730704785,
+      "lat": 52.68501891368726
+     }
+    ],
+    "method": "affine",
+    "warped": {
+     "bounds": [
+      5.872311599178638,
+      52.67769180203023,
+      5.891179849338895,
+      52.68827839875702
+     ],
+     "version": 1795289209270
+    }
+   }
+  },
+  {
+   "id": "27d96ef9-c84c-4cd0-80ef-53df8453d537",
+   "name": "WB25 - Plattegrond - Crew (2)",
+   "kind": "image",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#EFE8D6",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol",
+    "brightness": 0
+   },
+   "fields": [],
+   "image": {
+    "sourceName": "WB25 - Plattegrond - Crew (2).pdf",
+    "page": 1,
+    "width": 4962,
+    "height": 3508,
+    "fullWidth": 4962,
+    "fullHeight": 3508,
+    "crop": null,
+    "gcps": [
+     {
+      "id": "3d8feba7-ec42-42da-8738-fdf3c452a274",
+      "px": 1127.5545013995256,
+      "py": 1202.5708221001353,
+      "lon": 5.874378870404399,
+      "lat": 52.6829166859676
+     },
+     {
+      "id": "79f5403d-38a8-4480-985c-6b82733def36",
+      "px": 2546.6865497191607,
+      "py": 2162.293759888674,
+      "lon": 5.880824099136532,
+      "lat": 52.68274353924994
+     },
+     {
+      "id": "d09c0075-5e5e-4443-8775-d530262d170e",
+      "px": 3572.4650042282406,
+      "py": 1663.3863496304207,
+      "lon": 5.883139065110129,
+      "lat": 52.68495746504519
+     }
+    ],
+    "method": "affine",
+    "warped": {
+     "bounds": [
+      5.868393111976698,
+      52.677036249298865,
+      5.891228690740893,
+      52.68989338351463
+     ],
+     "version": 1795286730146
+    }
+   }
+  },
+  {
+   "id": "f289477c-b273-4414-bcb2-cd387f135ee2",
+   "name": "Luchtfoto PDOK",
+   "kind": "pdok",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#66733F",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol",
+    "brightness": 0
+   },
+   "fields": [],
+   "pdokLayer": "Actueel_orthoHR"
+  },
+  {
+   "id": "b45bf610-27bd-45a7-9a8b-10428975444c",
+   "name": "Basiskaart BGT",
+   "kind": "bgt",
+   "visible": false,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#1B3524",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol",
+    "brightness": 0
+   },
+   "fields": []
+  }
+ ],
+ "view": {
+  "center": [
+   5.885839866360129,
+   52.68321757865863
+  ],
+  "zoom": 16.808363956369963
+ }
+}

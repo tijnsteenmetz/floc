@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>floc — navigatie voor festivals en events</title>
+  <meta name="description" content="floc is Google Maps voor je festival. Vind het podium, de bar, de WC of je eigen tent terug — over de echte paden van het terrein, ook zonder bereik.">
+  <meta name="theme-color" content="#0C0D0E">
+  <link rel="icon" href="img/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a href="#top" class="logo"><img src="img/icon.png" alt="">floc</a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#bezoekers">Functies</a>
+      <a href="#offline">Zonder bereik</a>
+      <a href="#faq">FAQ</a>
+      <a href="organisatoren.html">Voor organisatoren</a>
+    </nav>
+    <a href="#download" class="btn btn-lime">Download floc</a>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <div class="pill reveal"><b>Nieuw</b> De festival-app die de weg weet</div>
+      <h1 class="reveal d1">Google Maps<br>voor je <span class="mark">festival.</span></h1>
+      <p class="lead reveal d2">Normale kaarten zien een weiland of een bos. floc kent de paden, podia, bars, WC's en nooduitgangen van jouw event en loodst je er feilloos naartoe. Ook terug naar je tent om 4 uur 's nachts.</p>
+      <div class="hero-ctas reveal d3">
+        <a href="#bezoekers" class="btn btn-lime">Bekijk de app
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a href="#download" class="btn btn-ghost">Binnenkort in de App Store</a>
+      </div>
+      <div class="hero-meta reveal d3">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Werkt zonder bereik</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Routes over echte paden</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Timetable per podium</span>
+      </div>
+    </div>
+
+    <div class="phones reveal d2">
+      <div class="phone p2"><img src="img/app-search.jpg" alt="floc: zoeken op een act in de timetable"></div>
+      <div class="phone p1"><img src="img/app-nav.jpg" alt="floc: een looproute over de paden van het festivalterrein"></div>
+      <div class="float-tag ft1"><div class="ic" style="background:var(--lime)">⌖</div><div>330 m · 4 min<small>naar Area 5</small></div></div>
+      <div class="float-tag ft2"><div class="ic" style="background:var(--purple)">♪</div><div>Nu: Lammer x Armin<small>20:00 – 21:00</small></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STRIP ============ -->
+<div class="strip" aria-hidden="true">
+  <div class="marquee">
+    <span>Festivals<i></i></span><span>Marathons<i></i></span><span>Stadsfeesten<i></i></span><span>Koningsdag<i></i></span><span>Kermissen<i></i></span><span>Braderieën<i></i></span><span>Openluchtconcerten<i></i></span><span>Wielerrondes<i></i></span>
+    <span>Festivals<i></i></span><span>Marathons<i></i></span><span>Stadsfeesten<i></i></span><span>Koningsdag<i></i></span><span>Kermissen<i></i></span><span>Braderieën<i></i></span><span>Openluchtconcerten<i></i></span><span>Wielerrondes<i></i></span>
+  </div>
+</div>
+
+<!-- ============ PROBLEEM ============ -->
+<section class="section" id="probleem">
+  <div class="wrap">
+    <div class="problem-head">
+      <div>
+        <span class="eyebrow reveal">Het probleem</span>
+        <h2 class="h2 reveal d1">Je kaart-app kent het weiland. Niet je festival.</h2>
+      </div>
+      <p class="lead reveal d2">Een festivalterrein bestaat maar een paar dagen per jaar. Geen enkele kaart-app weet waar het podium staat, welk pad door het bos loopt of welke doorgang vanavond dicht is. Dus dwalen bezoekers rond met een PDF-plattegrond en een lege batterij.</p>
+    </div>
+
+    <div class="cards3">
+      <div class="card reveal">
+        <div class="icon-sq"><svg viewBox="0 0 24 24" fill="none" stroke="#FF8F8F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg></div>
+        <h3>Geen paden, geen podia</h3>
+        <p>Op een gewone kaart is je festival een groen vlak zonder paden, hekken of podia. De route stopt bij de parkeerplaats.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="icon-sq"><svg viewBox="0 0 24 24" fill="none" stroke="#FF8F8F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14h6M9 18h4"/></svg></div>
+        <h3>Een PDF zegt niet waar jij staat</h3>
+        <p>De plattegrond is mooi, maar op een PDF zie je niet waar je zelf bent en welke kant je op moet. Zeker niet in het donker.</p>
+      </div>
+      <div class="card reveal d2">
+        <div class="icon-sq"><svg viewBox="0 0 24 24" fill="none" stroke="#FF8F8F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5.2-2.8M19 13a10 10 0 0 0-2-1.5M2 8.8a15 15 0 0 1 4.2-2.7M22 8.8A15 15 0 0 0 10.7 5"/><circle cx="12" cy="20" r="1"/></svg></div>
+        <h3>Geen bereik</h3>
+        <p>Met tienduizenden mensen op één plek valt het netwerk weg. Precies op het moment dat je je vrienden of je tent zoekt.</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="card reveal">
+        <figure class="generic-map">
+          <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="800" height="500" fill="#E9E6DC"/>
+            <path d="M120 90 C260 60 420 120 560 80 L700 120 L720 400 L540 450 L300 430 L110 380 Z" fill="#C9E2B4"/>
+            <path d="M420 230 C470 200 560 210 600 260 C620 310 560 350 500 340 C440 330 400 280 420 230 Z" fill="#A9CFE8"/>
+            <path d="M-20 470 L820 300" stroke="#fff" stroke-width="22"/>
+            <path d="M-20 470 L820 300" stroke="#F6D57B" stroke-width="14"/>
+            <path d="M80 -10 L130 520" stroke="#fff" stroke-width="12"/>
+            <text x="300" y="200" font-family="Inter, sans-serif" font-size="20" fill="#6E8A5C" font-style="italic">Bos</text>
+            <text x="590" y="405" font-family="Inter, sans-serif" font-size="15" fill="#8A8676" transform="rotate(-11 590 405)">Leemringweg</text>
+            <g transform="translate(250 300)">
+              <path d="M0 0 C-18 -24 -22 -38 -22 -48 A22 22 0 1 1 22 -48 C22 -38 18 -24 0 0Z" fill="#E5484D"/>
+              <circle cy="-48" r="8" fill="#fff"/>
+            </g>
+            <rect x="180" y="315" width="150" height="30" rx="8" fill="#fff"/>
+            <text x="255" y="335" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#555">Festivalterrein?</text>
+          </svg>
+        </figure>
+        <figcaption><b>Gewone kaart-app</b><span class="tag bad">Een groen vlak</span></figcaption>
+      </div>
+      <div class="card reveal d1">
+        <figure class="floc-map"><img src="img/dashboard-map.jpg" alt="Hetzelfde terrein in floc: alle paden, podia en voorzieningen"></figure>
+        <figcaption><b>Hetzelfde terrein in floc</b><span class="tag good">Elk pad, elk podium</span></figcaption>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BEZOEKERS ============ -->
+<section class="section" id="bezoekers" style="padding-top:0">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow reveal">Voor bezoekers</span>
+      <h2 class="h2 reveal d1">Minder zoeken.<br>Meer festival.</h2>
+      <p class="lead reveal d2">Open de kaart van je event en je ziet meteen waar je bent, wat er is en hoe je er komt. Geen gedoe, geen account nodig.</p>
+    </div>
+
+    <div class="feature">
+      <div>
+        <span class="step-num reveal">01 · Route</span>
+        <h3 class="reveal d1">Een route over de paden die er echt zijn.</h3>
+        <p class="lead reveal d2">floc rekent over de paden, velden en doorgangen van het terrein zelf. Je ziet de afstand en looptijd, en de route past zich aan terwijl je loopt.</p>
+        <ul class="reveal d3">
+          <li>Route naar elk podium, elke bar of elke plek die je op de kaart aanwijst</li>
+          <li>Afstand en looptijd tellen mee terwijl je loopt</li>
+          <li>Kaart draait mee met de richting waarin je kijkt</li>
+        </ul>
+      </div>
+      <div class="feature-media reveal d1">
+        <div class="glow" style="background:var(--lime)"></div>
+        <div class="phone"><img src="img/app-nav.jpg" alt="Looproute in floc met afstand en looptijd" loading="lazy"></div>
+      </div>
+    </div>
+
+    <div class="feature rev">
+      <div>
+        <span class="step-num reveal">02 · Line-up</span>
+        <h3 class="reveal d1">Zoek op act. floc weet waar ze spelen.</h3>
+        <p class="lead reveal d2">Typ de naam van een artiest, een podium of gewoon "bar". Elk podium heeft z'n eigen timetable, per dag. Eén tik op <b>Route</b> en je bent onderweg.</p>
+        <ul class="reveal d3">
+          <li>Zoeken in namen, categorieën en de complete timetable</li>
+          <li>Info, foto en planning per podium</li>
+          <li>Zet je favoriete podia met een ster bij je plekken</li>
+        </ul>
+      </div>
+      <div class="feature-media reveal d1">
+        <div class="glow" style="background:var(--purple)"></div>
+        <div class="phone"><img src="img/app-route.jpg" alt="Podiumkaart in floc met info en timetable" loading="lazy"></div>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div>
+        <span class="step-num reveal">03 · Mijn tent</span>
+        <h3 class="reveal d1">Je tent terugvinden. Ook om 4 uur 's nachts.</h3>
+        <p class="lead reveal d2">Zet bij aankomst je slaapplek op de kaart. Een tik op <b>Naar huis</b> brengt je terug, tussen duizend identieke tenten door. Sla ook de tent van vrienden of jullie vaste ontmoetingsplek op.</p>
+        <ul class="reveal d3">
+          <li>Eén speciale slaapplek, altijd binnen handbereik</li>
+          <li>Eigen plekken: tent van iemand, ontmoetingsplek, favoriete plek</li>
+          <li>Blijft alleen op jouw telefoon bewaard</li>
+        </ul>
+      </div>
+      <div class="feature-media reveal d1">
+        <div class="glow" style="background:var(--lime)"></div>
+        <div class="phone"><img src="img/app-start.jpg" alt="floc startscherm met zoeken, categorieën en je slaapplek" loading="lazy"></div>
+      </div>
+    </div>
+
+    <div class="feature rev">
+      <div>
+        <span class="step-num reveal">04 · Dichtstbijzijnde</span>
+        <h3 class="reveal d1">Waar is de dichtstbijzijnde WC? Echt de dichtstbijzijnde.</h3>
+        <p class="lead reveal d2">Kies een categorie en floc sorteert alles op <b>echte loopafstand</b>, niet hemelsbreed. Want de WC aan de overkant van de vijver is niet dichtbij.</p>
+        <ul class="reveal d3">
+          <li>WC, EHBO, munten, eten, water, bars, kluisjes</li>
+          <li>Gesorteerd op hoe ver je echt moet lopen</li>
+          <li>De kaart toont alleen wat je zoekt</li>
+        </ul>
+      </div>
+      <div class="feature-media reveal d1">
+        <div class="glow" style="background:var(--amber)"></div>
+        <div class="phone"><img src="img/app-category.jpg" alt="Alle muntenpunten op een rij in floc" loading="lazy"></div>
+      </div>
+    </div>
+
+    <div class="bento">
+      <div class="card b4 reveal" id="offline">
+        <div class="offline-vis"><div class="bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:80%"></i><i style="height:100%"></i></div><span class="muted">→</span><span class="lime">0 bars</span></div>
+        <h3>Werkt zonder bereik</h3>
+        <p>De hele kaart, met luchtfoto, paden en voorzieningen, staat op je telefoon. Routes rekent floc op je telefoon zelf uit. Geen netwerk nodig.</p>
+      </div>
+      <div class="card b2 reveal d1">
+        <div class="icon-sq"><svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+        <h3>Luchtfoto als ondergrond</h3>
+        <p>Je herkent het terrein meteen: elk pad en elke boomgrens.</p>
+      </div>
+      <div class="card b3 reveal">
+        <div class="chips">
+          <span class="chip"><i style="background:var(--purple)"></i>Podium</span>
+          <span class="chip"><i style="background:var(--amber)"></i>Bar</span>
+          <span class="chip"><i style="background:var(--pink)"></i>Eten</span>
+          <span class="chip"><i style="background:#FF6B6B"></i>EHBO</span>
+          <span class="chip"><i style="background:var(--lime)"></i>Munten</span>
+          <span class="chip"><i style="background:var(--blue)"></i>Water</span>
+          <span class="chip"><i style="background:var(--orange)"></i>Nooduitgang</span>
+        </div>
+        <h3>Alles op één kaart</h3>
+        <p>Elke soort voorziening z'n eigen kleur, net als op het terrein.</p>
+      </div>
+      <div class="card b3 reveal d1">
+        <div class="icon-sq"><svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.4 6.7 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg></div>
+        <h3>Jouw festival, jouw lijstje</h3>
+        <p>Sterretje bij je favoriete podia en bars. Ze staan bovenaan, met de route er direct bij.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ORGANISATOREN (verwijzing) ============ -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="crosslink reveal">
+      <div>
+        <span class="eyebrow purple">Voor organisatoren</span>
+        <h2>Organiseer je een festival of event?</h2>
+        <p>Zet je terrein in floc en je bezoekers vinden zelf de weg naar elk podium, elke bar en elke nooduitgang.</p>
+      </div>
+      <a href="organisatoren.html" class="btn btn-lime">Lees meer voor organisatoren
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section" id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow reveal">Veelgestelde vragen</span>
+      <h2 class="h2 reveal d1">Goed om te weten.</h2>
+    </div>
+    <div class="faq reveal d1">
+      <details>
+        <summary>Werkt floc echt zonder internet?<span class="plus">+</span></summary>
+        <p>Ja. Zodra de kaart van je event op je telefoon staat, heb je geen netwerk meer nodig. De luchtfoto, de paden, de voorzieningen en de timetable staan allemaal lokaal, en routes rekent je telefoon zelf uit. Je locatie komt van GPS, en dat werkt ook zonder bereik.</p>
+      </details>
+      <details>
+        <summary>Waarom niet gewoon Google Maps?<span class="plus">+</span></summary>
+        <p>Omdat een festivalterrein voor een gewone kaart niet bestaat. Die ziet een weiland of een bos, zonder de paden, hekken, podia en bars die er een paar dagen staan. floc gebruikt de kaart die de organisatie zelf maakt van het terrein zoals het er tijdens het event bij ligt.</p>
+      </details>
+      <details>
+        <summary>Hoe nauwkeurig is mijn locatie?<span class="plus">+</span></summary>
+        <p>GPS is buiten meestal op een paar meter nauwkeurig. Loop je vlak bij een pad, dan zet floc je stip netjes op dat pad.</p>
+      </details>
+      <details>
+        <summary>Op welke telefoons werkt floc?<span class="plus">+</span></summary>
+        <p>We beginnen op iPhone. Android volgt later.</p>
+      </details>
+      <details>
+        <summary>Wat gebeurt er met mijn opgeslagen plekken?<span class="plus">+</span></summary>
+        <p>Je slaapplek, opgeslagen plekken en favorieten blijven op je eigen telefoon. Je hebt geen account nodig.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DOWNLOAD ============ -->
+<section class="section download band" id="download">
+  <div class="wrap">
+    <span class="eyebrow reveal">Binnenkort</span>
+    <h2 class="h2 reveal d1">Nooit meer zoeken<br>naar je <span class="lime">tent.</span></h2>
+    <p class="lead reveal d2">floc komt in 2027 naar de eerste festivals. Download de app en open de kaart van jouw event.</p>
+    <div class="store-btns reveal d3">
+      <a class="store" href="#download">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1.1-3.2-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.1 1.1.1 2.3-.6 3-1.5z"/></svg>
+          <span><small>Binnenkort in de</small>App Store</span>
+      </a>
+      <a class="btn btn-ghost" href="organisatoren.html" style="height:60px">Ik organiseer een event</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a href="#top" class="logo"><img src="img/icon.png" alt="">floc</a>
+        <p style="margin-top:16px;max-width:320px">Navigatie voor festivals en events. Over de echte paden, ook zonder bereik.</p>
+      </div>
+      <div>
+        <h4>App</h4>
+        <a href="index.html#bezoekers">Functies</a>
+        <a href="index.html#offline">Zonder bereik</a>
+        <a href="index.html#faq">FAQ</a>
+      </div>
+      <div>
+        <h4>Organisatoren</h4>
+        <a href="organisatoren.html">Voor organisatoren</a>
+        <a href="organisatoren.html#pilot">Pilot 2027</a>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <a href="organisatoren.html#pilot">Neem contact op</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 floc</span>
+      <span>Luchtfoto: PDOK / Beeldmateriaal Nederland</span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

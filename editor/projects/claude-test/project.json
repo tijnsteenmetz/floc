@@ -1,0 +1,167 @@
+{
+ "id": "claude-test",
+ "name": "CLAUDE TEST (mag weg)",
+ "notes": "Podia, munten en open velden afgelezen van de plattegrond; bars zijn verzonnen. Water = jouw eigen tekening.",
+ "created": "2026-11-21T16:15:26.156Z",
+ "updated": "2026-11-21T19:57:58.871Z",
+ "layers": [
+  {
+   "id": "f1935132-5ee9-42b6-842e-e48de14aad92",
+   "name": "Voorzieningen",
+   "kind": "voorzieningen",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#F5B84A",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "73ce9604-4116-4b1b-978f-6edf002a477b",
+   "name": "Water",
+   "kind": "water",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#2F7FB0",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "ad1e0f3a-8f66-42d4-9976-825a06876230",
+   "name": "Productie",
+   "kind": "eigen",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#C084FC",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "af7e9100-71ff-42f7-93f6-1f7d798ee798",
+   "name": "Beloopbaar",
+   "kind": "beloopbaar",
+   "visible": false,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#A3E635",
+    "fill": "arcering",
+    "width": "normaal",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "6d99dea9-3735-46fb-a6c5-de049399b0a0",
+   "name": "Water",
+   "kind": "eigen",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#F87171",
+    "fill": "arcering",
+    "width": "normaal",
+    "dash": "vol"
+   },
+   "fields": []
+  },
+  {
+   "id": "bc461c6b-50af-4ea0-852e-85d613f54533",
+   "name": "Plattegrond (import)",
+   "kind": "image",
+   "visible": false,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#EFE8D6",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol",
+    "brightness": -5
+   },
+   "fields": [],
+   "image": {
+    "sourceName": "layout.mbtiles",
+    "width": 4096,
+    "height": 3692,
+    "fullWidth": 4096,
+    "fullHeight": 3692,
+    "crop": null,
+    "gcps": [],
+    "method": "affine",
+    "warped": {
+     "bounds": [
+      5.873790001557478,
+      52.67919918414849,
+      5.8876999376249675,
+      52.6867999996565
+     ],
+     "version": 1795277736465
+    }
+   }
+  },
+  {
+   "id": "a63b4bce-1800-4e47-8193-b262514e6950",
+   "name": "Luchtfoto PDOK",
+   "kind": "pdok",
+   "visible": true,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#66733F",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol",
+    "brightness": 0
+   },
+   "fields": [],
+   "pdokLayer": "Actueel_orthoHR"
+  },
+  {
+   "id": "1bed14e6-d4ac-44c2-a132-6c654d2a298b",
+   "name": "Basiskaart BGT",
+   "kind": "bgt",
+   "visible": false,
+   "opacity": 100,
+   "locked": false,
+   "noExport": false,
+   "style": {
+    "color": "#1B3524",
+    "fill": "vol",
+    "width": "normaal",
+    "dash": "vol",
+    "brightness": 0
+   },
+   "fields": []
+  }
+ ],
+ "view": {
+  "center": [
+   5.883275520749862,
+   52.682982693344485
+  ],
+  "zoom": 16.610087423022524
+ }
+}

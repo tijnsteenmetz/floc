@@ -8,7 +8,9 @@ const [email, ...nameParts] = process.argv.slice(2);
 if (!email) { console.error('Gebruik: npm run create-staff -- <email> [naam]'); process.exit(1); }
 await migrate();
 const e = normEmail(email);
-const pw = randomBytes(9).toString('base64url');
+// No look-alike characters (I/l/1, O/0), so the password can be typed over without mistakes.
+const ALPHA = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const pw = Array.from(randomBytes(12), (b) => ALPHA[b % ALPHA.length]).join('');
 const hash = await hashPassword(pw);
 const existing = await one('SELECT id FROM users WHERE email = $1', [e]);
 if (existing) await q('UPDATE users SET password_hash = $2, is_staff = true WHERE email = $1', [e, hash]);

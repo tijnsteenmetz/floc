@@ -6,8 +6,7 @@ import { fileUrl } from './api';
 import type { Layer } from './types';
 import { pdokUrl } from './types';
 import type { MaskOp, Pick, Raster, RunParams, RunResult } from './veccore';
-export type { MaskOp, Pick, PickKind, RunParams, RunResult, Swatch, SepSample, SepInfo } from './veccore';
-export { SEP_COLORS } from './veccore';
+export type { MaskOp, Pick, PickKind, RunParams, RunResult } from './veccore';
 
 const R = 6378137;
 const mercX = (lon: number) => (R * lon * Math.PI) / 180;

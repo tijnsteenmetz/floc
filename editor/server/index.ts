@@ -2,6 +2,7 @@
 // Local on the Mac: `npm run dev` (same database and bucket as Railway, plus GDAL from QGIS).
 // On Railway: `npm start` after `npm run build`.
 import express from 'express';
+import http from 'node:http';
 import multer from 'multer';
 import os from 'node:os';
 import path from 'node:path';
@@ -25,6 +26,7 @@ import { appRoutes, latestRelease, publish } from './releases';
 const PROD = process.env.NODE_ENV === 'production' && !process.env.FLOC_LOCAL;
 const PORT = Number(process.env.PORT ?? 5180);
 const app = express();
+const httpServer = http.createServer(app);
 app.set('trust proxy', true);
 app.use(express.json({ limit: '200mb' }));
 const upload = multer({ dest: path.join(os.tmpdir(), 'floc-uploads'), limits: { fileSize: 500 * 1024 * 1024 } });
@@ -110,7 +112,8 @@ api.get('/projects/:id/files/*rel', h(async (req, res) => {
   if (rel.split('/').includes('..')) throw new HttpError(400, 'Ongeldig pad');
   const local = path.join(projectDir(pid(req)), rel);
   res.setHeader('Cache-Control', 'private, max-age=0');
-  if (process.env.FLOC_LOCAL && existsSync(local)) { res.sendFile(local); return STREAMED; }
+  // The cache lives in editor/.cache: allow the dot folder.
+  if (process.env.FLOC_LOCAL && existsSync(local)) { res.sendFile(local, { dotfiles: 'allow' }); return STREAMED; }
   const obj = await blob.getStream(fileKey(pid(req), rel));
   if (!obj) throw new HttpError(404, 'Bestand niet gevonden');
   res.setHeader('Content-Type', obj.type);
@@ -283,17 +286,18 @@ if (PROD) {
   }
 } else {
   const { createServer } = await import('vite');
-  const vite = await createServer({ root: EDITOR, server: { middlewareMode: true }, appType: 'spa' });
+  // Live reload on its own port next to the server's, so several studios on one Mac don't fight over Vite's default port.
+  const vite = await createServer({ root: EDITOR, server: { middlewareMode: true, hmr: { port: PORT + 1 } }, appType: 'spa' });
   app.use(vite.middlewares);
 }
 
 await migrate();
 if (PROD) {
-  app.listen(PORT, '0.0.0.0', () => console.log(`floc server op poort ${PORT}`));
+  httpServer.listen(PORT, '0.0.0.0', () => console.log(`floc server op poort ${PORT}`));
 } else {
   // Listen on both IPv6 and IPv4 loopback: browsers may resolve "localhost" to either.
-  app.listen(PORT, '::1').on('error', () => { /* no IPv6 loopback: fine */ });
-  app.listen(PORT, '127.0.0.1', () => {
+  http.createServer(app).listen(PORT, '::1').on('error', () => { /* no IPv6 loopback: fine */ });
+  httpServer.listen(PORT, '127.0.0.1', () => {
     console.log(`\n  floc studio draait op http://localhost:${PORT}/studio/  (website: http://localhost:${PORT}/)\n`);
     if (!gdalAvailable) console.warn('  ⚠ QGIS/GDAL niet gevonden: georefereren, PDF en GeoPackage werken niet.\n');
   });

@@ -275,9 +275,9 @@ if (PROD) {
   const dist = path.join(EDITOR, 'dist');
   if (existsSync(path.join(dist, 'index.html'))) {
     app.use('/studio', express.static(dist, { index: false, maxAge: '1h' }));
-    app.get('/studio/*splat', (_req, res) => res.sendFile(path.join(dist, 'index.html')));
+    app.get('/studio{/*splat}', (_req, res) => res.sendFile(path.join(dist, 'index.html')));
   } else {
-    app.get('/studio/*splat', (_req, res) => res.status(503).type('html').send(
+    app.get('/studio{/*splat}', (_req, res) => res.status(503).type('html').send(
       '<!doctype html><meta charset="utf-8"><title>floc studio</title><body style="background:#0C0D0E;color:#F2F3F4;font:16px system-ui;padding:48px">' +
       '<h1>floc studio is tijdelijk niet beschikbaar</h1><p>De studio kon bij deze versie niet gebouwd worden (zie de build-log op Railway). De app en de website werken gewoon.</p></body>'));
   }

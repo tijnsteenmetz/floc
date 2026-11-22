@@ -17,10 +17,12 @@
 		616784BD03AF591959569CF2 /* DarkPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D59A9D988FCE8EFBDA1DFB /* DarkPalette.swift */; };
 		65CACE469F0658E583A985DB /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D1D46D5742458C8B77BD9B /* Geometry.swift */; };
 		6F11B5C33983499AC931E67D /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = A8B581CF692F078B899DD614 /* MapLibre */; };
+		8186D22B69D25AB34E1F5E47 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7FAED3D38509762A82C614 /* AccountView.swift */; };
 		8B98859C350B99AC729B97A1 /* FlocApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB38B36EBADB5CB89446965 /* FlocApp.swift */; };
 		A32DB5B629901566ECAFC298 /* JoystickView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21721CDFAB90B88385A05AC8 /* JoystickView.swift */; };
 		B9B6D6E120A8465016F60940 /* Places.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF6297BE4BCB258F27016A3 /* Places.swift */; };
 		BABD944F64CBA44CE441CE51 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1B9FC128EC9D33156D3292 /* SettingsSheet.swift */; };
+		D81B66E28E85110011CCC1CE /* Backend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71F3DD7A6F5D41EB6623323B /* Backend.swift */; };
 		E642904F9A99EB4553CBFA3F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1735F6E8AFED2EA0BD27C6C /* Assets.xcassets */; };
 		EE5584B02FB3870B5A862933 /* MapListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE690B5F4DBBFFD9123E29D2 /* MapListView.swift */; };
 		FADD0CDE386187EA283A8E0E /* LocationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAE2E4BF06860089D969F269 /* LocationModel.swift */; };
@@ -29,10 +31,12 @@
 /* Begin PBXFileReference section */
 		21721CDFAB90B88385A05AC8 /* JoystickView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoystickView.swift; sourceTree = "<group>"; };
 		27C562DE8BCD63FE101EFB8A /* Panels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Panels.swift; sourceTree = "<group>"; };
+		4A7FAED3D38509762A82C614 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
 		4C1B9FC128EC9D33156D3292 /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 		52BFACE8050F17783E226BE5 /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
 		69D1D46D5742458C8B77BD9B /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
 		6C054844DEF9950FD5D61A1B /* maps */ = {isa = PBXFileReference; lastKnownFileType = folder; path = maps; sourceTree = SOURCE_ROOT; };
+		71F3DD7A6F5D41EB6623323B /* Backend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backend.swift; sourceTree = "<group>"; };
 		7DFB46BDF87955BA3E327DD2 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		92D59A9D988FCE8EFBDA1DFB /* DarkPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkPalette.swift; sourceTree = "<group>"; };
 		9AB38B36EBADB5CB89446965 /* FlocApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlocApp.swift; sourceTree = "<group>"; };
@@ -70,7 +74,9 @@
 		B7BA5290BDFC9FE18F34FA29 /* Floc */ = {
 			isa = PBXGroup;
 			children = (
+				4A7FAED3D38509762A82C614 /* AccountView.swift */,
 				E1735F6E8AFED2EA0BD27C6C /* Assets.xcassets */,
+				71F3DD7A6F5D41EB6623323B /* Backend.swift */,
 				92D59A9D988FCE8EFBDA1DFB /* DarkPalette.swift */,
 				9D920C9B1E91279BCAACB716 /* EventMap.swift */,
 				9AB38B36EBADB5CB89446965 /* FlocApp.swift */,
@@ -176,6 +182,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8186D22B69D25AB34E1F5E47 /* AccountView.swift in Sources */,
+				D81B66E28E85110011CCC1CE /* Backend.swift in Sources */,
 				616784BD03AF591959569CF2 /* DarkPalette.swift in Sources */,
 				18AA311EBF627CD23AE439CA /* EventMap.swift in Sources */,
 				8B98859C350B99AC729B97A1 /* FlocApp.swift in Sources */,

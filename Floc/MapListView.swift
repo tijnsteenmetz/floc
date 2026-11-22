@@ -68,7 +68,17 @@ struct MapListView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: EventMap.self) { MapScreen(map: $0) }
         }
-        .task { reloadDownloaded(); await store.refresh() }
+        .task {
+            reloadDownloaded()
+            await store.refresh()
+            // Testing: `-download <event id>` downloads (or updates) that event and opens it.
+            let a = ProcessInfo.processInfo.arguments
+            if let i = a.firstIndex(of: "-download"), i + 1 < a.count {
+                await store.download(a[i + 1])
+                reloadDownloaded()
+                if let m = downloaded[a[i + 1]] { navPath.append(m) }
+            }
+        }
         .onChange(of: store.installed) { _, _ in reloadDownloaded() }
         .confirmationDialog("Van je telefoon verwijderen?", isPresented: Binding(get: { confirmRemove != nil }, set: { if !$0 { confirmRemove = nil } }), presenting: confirmRemove) { e in
             Button("\(e.name) verwijderen", role: .destructive) { store.remove(e.id) }

@@ -1,19 +1,22 @@
 # floc editor
 
-Lokale webapp om festivalkaarten te tekenen voor de floc-app. Zie [SPEC.md](SPEC.md) voor wat hij doet en waarom.
+De floc studio: hier teken je festivalkaarten en publiceer je ze naar de app. Zie [SPEC.md](SPEC.md) voor wat de editor doet en [../backend/SPEC.md](../backend/SPEC.md) voor de server.
+
+Online: **https://floc-server-production.up.railway.app/studio/** (zonder georefereren/PDF, want daar is geen GDAL). Op de Mac draait dezelfde studio met GDAL, op dezelfde database en opslag.
 
 ## Starten
 
 ```sh
 cd editor
 npm install      # eenmalig
-npm run dev
+npm run dev      # haalt via `railway run` de database- en opslagsleutels op
 ```
 
-Open daarna **http://localhost:5180**. Stoppen: `Ctrl+C` in de terminal.
+Open daarna **http://localhost:5180/studio/** en log in. Stoppen: `Ctrl+C` in de terminal.
 
 Nodig:
 - **Node 22** of nieuwer.
+- **Railway CLI**, ingelogd (`railway login`) en in deze repo gekoppeld aan project `floc`.
 - **QGIS** in `/Applications`. De editor gebruikt de GDAL die in QGIS zit voor PDF's, GeoPackages, georefereren en MBTiles. QGIS zelf hoeft niet open te staan.
 - **Internet** voor de PDOK-luchtfoto, de BGT en het zoeken naar adressen.
 
@@ -21,7 +24,10 @@ Nodig:
 
 | Map | Inhoud |
 |---|---|
-| `editor/projects/<id>/` | je kaarten: `project.json`, `layers/*.geojson`, `facilities.json`, `photos/` (foto's van voorzieningen), `images/` (bronbestanden en gegeorefereerde beelden, niet in git) |
+| Postgres (Railway) | je kaarten (concept), accounts, organisaties, gepubliceerde versies |
+| bucket `floc-files` (Railway) | `projects/<id>/images/…` en `photos/…`, en de gepubliceerde pakketten `releases/<id>/<versie>/…` |
+| `editor/.cache/` | lokale werkkopieën van beelden voor GDAL (niet in git) |
+| `editor/projects/` | oude opslag van vóór de backend, al overgezet (`npm run migrate-local`) |
 | `editor/library/` | categorieën van voorzieningen (`categories.json`), gedeeld door alle kaarten. `designs.json` wordt niet meer gebruikt |
 | `maps/<id>/` | wat **Exporteren** schrijft, voor de iOS-app |
 

@@ -7,6 +7,15 @@
 
 The map editing moved from QGIS to the **dashboard** (`editor/`, see `editor/SPEC.md`). The iOS app was rebuilt around what the dashboard exports: see **"App v1 — dashboard-driven"** at the end of [SPEC.md](SPEC.md). In short: dark dashboard look, aerial + walkable areas + paths only (path colour adjustable), facilities with info/timetable/photo, search, categories sorted by walking distance, saved places with a special sleeping spot, favourites. The current test map is `maps/wildenburg2026-v2` (export with a 600 m aerial). New test arguments: `-sleep <lat>,<lon>`, `-category <id>`, `-select <name>`, `-search <text>`.
 
+## Update 2026-11-22: backend (Railway)
+
+There is now a real backend, the start of the real product. Read **[backend/SPEC.md](backend/SPEC.md)**.
+- Railway project `floc`: service `floc-server` (the editor server, deployed from GitHub `main` via `Dockerfile`), Postgres, bucket `floc-files` (ams).
+- https://floc-server-production.up.railway.app serves the website `/`, the studio `/studio/` and the API `/api/v1`.
+- Maps live in Postgres and the bucket, no longer in `editor/projects/`. **Publiceren** (was Exporteren) uploads a versioned package. The iOS app needs an account, lists the published events, downloads them to Application Support/events/<id>/ and then works offline. Bundled maps remain as "Testkaarten".
+- Local studio with GDAL: `cd editor && npm run dev` → http://localhost:5180/studio/ (same database and bucket via `railway run`).
+- New app test arguments: `-login <email> <pw>`, `-download <event id>`, `-apiBase <url>`.
+
 ## Who and what
 
 - **floc**: navigation for events (festivals, marathons, fairs, city events), "Google Maps for events". It routes over the event's own layout (paths, closures, obstacles), which normal maps don't have.
